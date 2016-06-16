@@ -21,14 +21,8 @@ class Node{
 		/* This is the port used when the node is being a server */
 		int server_port;
 
-		/* This is the port used when the node is being a server */
+		/* List of port being used for communicating with Children */
 		int port_array[MAX_CHILD];
-
-		/* Start the server */
-		void start_server(std::string);
-
-		/* Start the client */
-		void start_client(std::string);
 
 	private:
 		/* List of all the child of this node */
