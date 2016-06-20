@@ -15,7 +15,7 @@ using namespace Lucene;
 /// When the query is executed for the first time, then only enough results are collected to fill 5 result
 /// pages. If the user wants to page beyond this limit, then the query is executed another time and all
 /// hits are collected.
-static void doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, int32_t hitsPerPage, bool raw, bool interactive) {
+static int doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, int32_t hitsPerPage, bool raw, bool interactive) {
 	// Collect enough docs to show 5 pages
 	TopScoreDocCollectorPtr collector = TopScoreDocCollector::create(5 * hitsPerPage, false);
 	searcher->search(query, collector);
@@ -117,4 +117,5 @@ static void doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, i
 			end = std::min(numTotalHits, start + hitsPerPage);
 		}*/
 	//}
+	return numTotalHits;
 }

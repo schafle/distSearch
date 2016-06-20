@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "tcpacceptor.h"
 
 #include "targetver.h"
@@ -72,6 +73,7 @@ int run_query(int argc, char* argv[], std::string line){
 		return 1;
 	}
 
+	int doc_found;
 	try {
 		String index = L"index";
 		String field = L"contents";
@@ -165,7 +167,7 @@ int run_query(int argc, char* argv[], std::string line){
 		}
 
 		if (paging) {
-			doPagingSearch(searcher, query, hitsPerPage, raw, queries.empty());
+			doc_found = doPagingSearch(searcher, query, hitsPerPage, raw, queries.empty());
 		} else {
 			doStreamingSearch(searcher, query);
 		}
@@ -176,7 +178,7 @@ int run_query(int argc, char* argv[], std::string line){
 		return 1;
 	}
 
-	return 0;
+	return doc_found;
 
 }
 
@@ -186,7 +188,7 @@ int main(int argc, char* argv[]) {
 	TCPStream* stream = NULL;
 	TCPAcceptor* acceptor = NULL;
 	//if (argc == 3) {
-		acceptor = new TCPAcceptor(atoi("3033"), "localhost");
+	acceptor = new TCPAcceptor(atoi("3033"), "localhost");
 	//}
 	//else {
 	//	acceptor = new TCPAcceptor(atoi(argv[1]));
@@ -194,24 +196,26 @@ int main(int argc, char* argv[]) {
 
 	char received_line[256];
 	if (acceptor->start() == 0) {
-	//	while (1) {
+		while (1) {
 			stream = acceptor->accept();
 			if (stream != NULL) {
 				ssize_t len;
 				char received_line[256];
 				while ((len = stream->receive(received_line, sizeof(received_line))) > 0) {
 					received_line[len] = 0;
-					printf("received - %s\n", received_line);
-					stream->send(received_line, len);
+					printf("searching for: %s\n", received_line);
+					std::string line(received_line);
+					int a = run_query(argc,argv,line);
+					std:string response = std::to_string(a) + " matching documents found";
+					stream->send(response.c_str(), 30);
 				}
 				delete stream;
 			}
-	//	}
+		}
 	}
 
-	std::string line(received_line);
-	std::cout << received_line << std::endl;
-	int a = run_query(argc,argv,line);
+	//std::string line(received_line);
+	//int a = run_query(argc,argv,line);
 
 }
 
