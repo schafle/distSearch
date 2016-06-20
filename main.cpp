@@ -59,7 +59,7 @@ static void doStreamingSearch(const SearcherPtr& searcher, const QueryPtr& query
 	searcher->search(query, newLucene<StreamingHitCollector>());
 }
 
-int run_query(int argc, char* argv[]){
+int run_query(int argc, char* argv[], std::string line){
 	if (argc == 1 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "-help") == 0) {
 		std::wcout << L"Usage: searchfiles.exe [-index dir] [-field f] [-repeat n] [-queries file] [-raw] ";
 		std::wcout << L"[-norms field] [-paging hitsPerPage]\n\n";
@@ -125,42 +125,44 @@ int run_query(int argc, char* argv[]){
 		}
 
 		//while (true) {
-			String line;
+		//String line;
 
-			if (!queries.empty()) {
-				wchar_t c = in->read();
-				while (c != L'\n' && c != L'\r' && c != Reader::READER_EOF) {
-					line += c;
-					c = in->read();
-				}
-			} else {
-				std::wcout << L"Enter query: ";
-				//getline(std::wcin, line); //Original
-				std::wcin >> line; //Working with this change; just to check if another string is accepted; stupid I know.
-				//line = get_query(); //getting query from the tcpip connectopm
+		//if (!queries.empty()) {
+		//	wchar_t c = in->read();
+		//	while (c != L'\n' && c != L'\r' && c != Reader::READER_EOF) {
+		//		line += c;
+		//		c = in->read();
+		//	}
+		//} else {
+		//std::wcout << L"Enter query: ";
+		//getline(std::wcin, line); //Original
+		//std::wcin >> line; //Working with this change; just to check if another string is accepted; stupid I know.
+		//line = get_query(); //getting query from the tcpip connectopm
+		//}
+		//boost::trim(line);
+
+		//if (line.empty()) {
+		//break;
+		//}
+
+		std::wstring ws;
+		ws.assign(line.begin(), line.end());
+		QueryPtr query = parser->parse(ws);
+		std::wcout << L"Searching for: " << query->toString(field) << L"\n";
+
+		if (repeat > 0) { // repeat and time as benchmark
+			int64_t start = MiscUtils::currentTimeMillis();
+			for (int32_t i = 0; i < repeat; ++i) {
+				searcher->search(query, FilterPtr(), 100);
 			}
-			boost::trim(line);
+			std::wcout << L"Time: " << (MiscUtils::currentTimeMillis() - start) << L"ms\n";
+		}
 
-			if (line.empty()) {
-				//break;
-			}
-
-			QueryPtr query = parser->parse(line);
-			std::wcout << L"Searching for: " << query->toString(field) << L"\n";
-
-			if (repeat > 0) { // repeat and time as benchmark
-				int64_t start = MiscUtils::currentTimeMillis();
-				for (int32_t i = 0; i < repeat; ++i) {
-					searcher->search(query, FilterPtr(), 100);
-				}
-				std::wcout << L"Time: " << (MiscUtils::currentTimeMillis() - start) << L"ms\n";
-			}
-
-			if (paging) {
-				doPagingSearch(searcher, query, hitsPerPage, raw, queries.empty());
-			} else {
-				doStreamingSearch(searcher, query);
-			}
+		if (paging) {
+			doPagingSearch(searcher, query, hitsPerPage, raw, queries.empty());
+		} else {
+			doStreamingSearch(searcher, query);
+		}
 		//}
 		reader->close();
 	} catch (LuceneException& e) {
@@ -168,14 +170,15 @@ int run_query(int argc, char* argv[]){
 		return 1;
 	}
 
-return 0;
+	return 0;
 
 }
 
 /// Simple command-line based search demo.
 int main(int argc, char* argv[]) {
 
-int a = run_query(argc,argv);
+        std::string line  = "suraj";
+	int a = run_query(argc,argv,line);
 
 }
 

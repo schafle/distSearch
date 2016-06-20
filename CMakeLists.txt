@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 2.6)
 project (DistrSearch)
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") # for gcc >= 4.7, or c++0x for 4.6
+
 # The version number.
 # set (DistSearch_VERSION_MAJOR 1)
 # set (DistSearch_VERSION_MINOR 0)
