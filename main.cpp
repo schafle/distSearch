@@ -6,6 +6,11 @@
 
 #define NOMINMAX
 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "tcpacceptor.h"
+
 #include "targetver.h"
 #include <iostream>
 #include <boost/algorithm/string.hpp>
@@ -147,6 +152,7 @@ int run_query(int argc, char* argv[], std::string line){
 
 		std::wstring ws;
 		ws.assign(line.begin(), line.end());
+		std::wcout << ws << std::endl;
 		QueryPtr query = parser->parse(ws);
 		std::wcout << L"Searching for: " << query->toString(field) << L"\n";
 
@@ -177,7 +183,34 @@ int run_query(int argc, char* argv[], std::string line){
 /// Simple command-line based search demo.
 int main(int argc, char* argv[]) {
 
-        std::string line  = "suraj";
+	TCPStream* stream = NULL;
+	TCPAcceptor* acceptor = NULL;
+	//if (argc == 3) {
+		acceptor = new TCPAcceptor(atoi("3033"), "localhost");
+	//}
+	//else {
+	//	acceptor = new TCPAcceptor(atoi(argv[1]));
+	//}
+
+	char received_line[256];
+	if (acceptor->start() == 0) {
+	//	while (1) {
+			stream = acceptor->accept();
+			if (stream != NULL) {
+				ssize_t len;
+				char received_line[256];
+				while ((len = stream->receive(received_line, sizeof(received_line))) > 0) {
+					received_line[len] = 0;
+					printf("received - %s\n", received_line);
+					stream->send(received_line, len);
+				}
+				delete stream;
+			}
+	//	}
+	}
+
+	std::string line(received_line);
+	std::cout << received_line << std::endl;
 	int a = run_query(argc,argv,line);
 
 }
