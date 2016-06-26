@@ -17,7 +17,7 @@
 #include "tcpconnector.h"
 #include "tcpacceptor.h"
 #include "tcpstream.h"
-
+#include "error.h"
 #define MAX_CHILD 2  /* Maximum number of children a node can have */
 
 class Node{
@@ -69,5 +69,6 @@ class Node{
 
 		/* Send message to parent */
 		int send_message_to_parent(std::string ParentHostName, int PortNumber, std::string Message);
-
+		
+		std::string get_input(int portNum);
 };
