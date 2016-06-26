@@ -13,7 +13,10 @@
 #include<iostream>
 #include<vector>
 #include<string>
-
+#include <fstream>
+#include "tcpconnector.h"
+#include "tcpacceptor.h"
+#include "tcpstream.h"
 
 #define MAX_CHILD 2  /* Maximum number of children a node can have */
 
@@ -25,7 +28,7 @@ class Node{
 
 		/* This is the port used when the node is being a server */
 		/* ToDo: Reading the port number from command line argument or a configuration file */
-		int port = 8012;   
+		int port; // = 8012;   
 		
 		/* All the number of nodes available in the cluster
 		 * We are storing it as a part of the node to avoid reading it from file everytime it is needed */
@@ -38,13 +41,13 @@ class Node{
 		//int client_port = 8013;
 		
 		/* Constructor */
-                Node(std::string hostname, int node, int PosNum);
+                Node(std::string hostname, int node, int PosNum, std::string filename);
 
 		/* List of all the child of this node */
 		std::string child_array[MAX_CHILD];
 
 		/* Get list of all the nodes in the cluster */
-		std::vector<std::string> get_list_of_all_nodes(); 
+		std::vector<std::string> get_list_of_all_nodes(std::string filename); 
 		
 		/* Return parent of this node */
 		std::string get_parent(int initialNodeIndex, int numOfBranches);
@@ -56,15 +59,15 @@ class Node{
 		bool am_i_leaf(int starting_node, int num_of_branches);
 
 		/* Get message from Parent */
-		int get_message_from_parent(std::string ParentHostName, int PortNumber);
+		std::string get_message_from_parent(std::string ParentHostName, int PortNumber);
 		
 		/* Send message to Children */
-		int send_message_to_children(std::string childName, int PortNumber);	
+		int send_message_to_children(std::string childName, int PortNumber, std::string message);	
 
 		/* Wait for children to send message */
-		int receive_message_from_children(std::string childName, int PortNumber);
+		std::string receive_message_from_children(std::string childName, int PortNumber);
 
 		/* Send message to parent */
-		int send_message_to_parent(std::string ParentHostName, int PortNumber);
+		int send_message_to_parent(std::string ParentHostName, int PortNumber, std::string Message);
 
 };
