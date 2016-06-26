@@ -32,6 +32,9 @@ include_directories(
 	)
 
 include_directories(
+	"include"
+	)
+include_directories(
 	${demo_headers}
 	)
 
@@ -42,7 +45,7 @@ set(PROJECT_INCLUDE_DIR "include/tcpip")
 set(PROJECT_BINARY_DIR "bin")
 
 
-add_executable("${PROJECT_BINARY_DIR}searchfiles" "main.cpp" "${TCPIP_SOURCE_DIR}/tcpacceptor.cpp" "${TCPIP_SOURCE_DIR}/tcpstream.cpp")
+add_executable("${PROJECT_BINARY_DIR}searchfiles" "main.cpp" "${TCPIP_SOURCE_DIR}/tcpacceptor.cpp" "${TCPIP_SOURCE_DIR}/tcpstream.cpp" "src/query.cpp")
 
 
 target_link_libraries( "${PROJECT_BINARY_DIR}searchfiles"
