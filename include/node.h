@@ -46,6 +46,7 @@ class Node{
 		/* List of all the child of this node */
 		std::string child_array[MAX_CHILD];
 
+		std::string listenOnTheReceivePort(int portNum);
 		/* Get list of all the nodes in the cluster */
 		std::vector<std::string> get_list_of_all_nodes(std::string filename); 
 		
@@ -59,10 +60,10 @@ class Node{
 		bool am_i_leaf(int starting_node, int num_of_branches);
 
 		/* Get message from Parent */
-		std::string get_message_from_parent(std::string ParentHostName, int PortNumber);
+		std::string get_message(std::string ParentHostName, int PortNumber);
 		
 		/* Send message to Children */
-		int send_message_to_children(std::string childName, int PortNumber, std::string message);	
+		bool send_message(std::string childName, int PortNumber, std::string message);	
 
 		/* Wait for children to send message */
 		std::string receive_message_from_children(std::string childName, int PortNumber);

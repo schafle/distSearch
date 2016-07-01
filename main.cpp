@@ -21,6 +21,7 @@
 #include <cstdlib>
 //#include "query.h"
 #include "node.h"
+#include <ctime>
 
 #define numOfBranches 2
 #define SENDPORT 3033
@@ -38,49 +39,67 @@ int main(int argc, char* argv[]){
 	std::string HostName = argv[3];
 	std::string NodeDetailsFile = argv[4];
 
-	int portNumber = 2006;
+	int portNumber = 3033;
 
-	int sockfd, newsockfd, pid;
-	socklen_t clilen;
-	struct sockaddr_in serv_addr, cli_addr;
+	/* Create a node object */
+	Node currentNode = Node( HostName, portNumber, posNum, NodeDetailsFile);
 
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0) error("ERROR opening socket");
-	bzero((char *) &serv_addr, sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	serv_addr.sin_port = htons(SENDPORT);
-	int enable = 1;
-	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
-		error("setsockopt(SO_REUSEADDR) failed");
-	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
-		error("ERROR on binding");
-	listen(sockfd,5);
-	clilen = sizeof(cli_addr);
-	while(1){
-		newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-		if (newsockfd < 0)
-			error("ERROR on accept");
-		/*	pid = fork();
-			if (pid < 0)
-			error("ERROR on fork");
-			if (pid == 0)  {
-			close(sockfd);
-			std::cout << "incoming message" << std::endl;
-			propogate(newsockfd);
-			exit(0);
-			}*/
-		/* Create a node object */
-		Node currentNode = Node( HostName, portNumber, posNum, NodeDetailsFile);
+	std::cout << "Listening for input on port: "<< portNumber << std::endl;
 
-		/* Waiting for a query from a client or a parent node */
-		std::cout << currentNode.get_input(newsockfd) << std::endl;
-		close(newsockfd);
+	/* Start listening on receivePort */
+	std::string received_string = currentNode.listenOnTheReceivePort(3033); 
+
+
+	/* Get all the children */
+
+	std::vector<std::string>  children = currentNode.get_children(0, 2);
+
+	std::clock_t start;
+	double duration;
+	if(posNum==0){
+		start = std::clock();
 	}
-	close(sockfd);
-	//std::cout << currentNode.get_children(0,2)[0] << std::endl;
+	/* Iterate ovr all the children and Forward query */
+	for(std::vector<std::string>::iterator it = children.begin(); it != children.end(); ++it) {
+
+		if(!currentNode.send_message(*it, 3033, received_string ) ){  /* If Unsuccessful print the message */
+			error("ERROR while sending query to children");
+		}
+		std::cout << "Sent the message to " <<  *it << std::endl;
+	}
+	std::string received_messages;
+	int received_messages_count = 0;
+
+	/* If leaf send its name to parent and thats it*/
+	if(currentNode.am_i_leaf(0,2)){
+		std::cout << "Sending it back to parent " << currentNode.get_parent(0,2) << std::endl;
+		currentNode.send_message(currentNode.get_parent(0,2), 3034, HostName);
+	}
+	/* else if root send back to client */	
+	else if(posNum == 0){
+
+		std::cout << "children.size()==>" << children.size() << std::endl;
+		while(received_messages_count != children.size()){
+			received_string = currentNode.listenOnTheReceivePort(3034);
+			std::cout << "Received from " << received_string << std::endl;
+			received_messages_count += 1;
+			//received_messages += HostName;
+		}
+		duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+		received_messages = "Received all messages in "+ std::to_string(duration);
+		currentNode.send_message("localhost", 3035,received_messages);
+		std::cout<<"Received all messages in: "<< duration << "seconds\n";
+	}	
+	/* Else open a connection for collecting result from child and then send back to parent */
+	else{
+		while( received_messages_count != children.size()){
+			received_string = currentNode.listenOnTheReceivePort(3034);
+			std::cout << "Received from" << received_string << std::endl;
+			//received_messages+"I am "+HostName+"\n";
+			received_messages_count += 1;
+		}
+		received_messages = HostName;
+		currentNode.send_message(currentNode.get_parent(0,2), 3034, received_messages);
+	}
 	/* Make query irrespective of anything on the current node */
-	//int a = make_query(index_location);
-
 }
-

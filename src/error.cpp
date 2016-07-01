@@ -14,5 +14,5 @@
 void error(const char *msg)
 {
     std::cout << msg << std::endl;
-    exit(1);
+    //exit(1);
 }

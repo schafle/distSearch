@@ -25,6 +25,7 @@
 #include <string>
 #include <iostream>
 #include "tcpconnector.h"
+#include "tcpacceptor.h"
 
 using namespace std;
 
@@ -51,15 +52,23 @@ int main(int argc, char** argv)
         delete stream;
     }
 
-    /*stream = connector->connect(argv[2], atoi(argv[1]));
-    if (stream) {
-        message = "Why is there air?";
-        stream->send(message.c_str(), message.size());
-        printf("sent - %s\n", message.c_str());
-        len = stream->receive(line, sizeof(line));
-        line[len] = 0;
-        printf("received - %s\n", line);
-        delete stream;
-    }*/
+	TCPAcceptor* acceptor = NULL;
+        acceptor = new TCPAcceptor(3035);
+        std::string received;
+        if (acceptor->start() == 0) {
+                stream = acceptor->accept();
+                if (stream != NULL) {
+                        ssize_t len;
+                        char line[256];
+                        if ((len = stream->receive(line, sizeof(line))) > 0) {
+                                line[len] = 0;
+                                received = string(line);
+                                std::cout << line << std::endl;
+                        }
+                }
+                delete stream;
+        }
+
+
     exit(0);
 }
