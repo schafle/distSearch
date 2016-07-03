@@ -54,6 +54,7 @@ int main(int argc, char* argv[]){
 
 	std::vector<std::string>  children = currentNode.get_children(0, 2);
 
+	std::cout << "I have "<< children.size() << " children." << std::endl;
 	std::clock_t start;
 	double duration;
 	if(posNum==0){

@@ -48,10 +48,10 @@ int main(int argc, char** argv)
         printf("sent - %s\n", message.c_str());
         len = stream->receive(line, sizeof(line));
         line[len] = 0;
-        printf("received - %s\n", line);
         delete stream;
     }
-
+	
+	std::cout << "waiting for results" << std::endl;
 	TCPAcceptor* acceptor = NULL;
         acceptor = new TCPAcceptor(3035);
         std::string received;
@@ -63,7 +63,7 @@ int main(int argc, char** argv)
                         if ((len = stream->receive(line, sizeof(line))) > 0) {
                                 line[len] = 0;
                                 received = string(line);
-                                std::cout << line << std::endl;
+                                cout << received << endl;
                         }
                 }
                 delete stream;
