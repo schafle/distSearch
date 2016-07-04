@@ -13,6 +13,7 @@
 #include<iostream>
 #include<vector>
 #include<string>
+#include <thread>
 #include <fstream>
 #include "tcpconnector.h"
 #include "tcpacceptor.h"
@@ -47,6 +48,7 @@ class Node{
 		std::string child_array[MAX_CHILD];
 
 		std::string listenOnTheReceivePort(int portNum);
+		void listenForMultipleReplies(int portNum, int numOfChildren);
 		/* Get list of all the nodes in the cluster */
 		std::vector<std::string> get_list_of_all_nodes(std::string filename); 
 		

@@ -54,6 +54,7 @@ int main(int argc, char* argv[]){
 
 	std::vector<std::string>  children = currentNode.get_children(0, 2);
 
+	int numOfChildren = children.size();
 	std::cout << "I have "<< children.size() << " children." << std::endl;
 	std::clock_t start;
 	double duration;
@@ -80,12 +81,13 @@ int main(int argc, char* argv[]){
 	else if(posNum == 0){
 
 		std::cout << "children.size()==>" << children.size() << std::endl;
-		while(received_messages_count != children.size()){
-			received_string = currentNode.listenOnTheReceivePort(3034);
-			std::cout << "Received from " << received_string << std::endl;
-			received_messages_count += 1;
+	//	while(received_messages_count != children.size()){
+			//received_string = currentNode.listenForMultipleReplies(3034);
+			currentNode.listenForMultipleReplies(3034, numOfChildren);
+		//	std::cout << "Received from " << received_string << std::endl;
+	//		received_messages_count += 1;
 			//received_messages += HostName;
-		}
+	//	}
 		duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
 		received_messages = "Received all messages in "+ std::to_string(duration);
 		currentNode.send_message("localhost", 3035,received_messages);
@@ -93,12 +95,12 @@ int main(int argc, char* argv[]){
 	}	
 	/* Else open a connection for collecting result from child and then send back to parent */
 	else{
-		while( received_messages_count != children.size()){
-			received_string = currentNode.listenOnTheReceivePort(3034);
-			std::cout << "Received from" << received_string << std::endl;
-			//received_messages+"I am "+HostName+"\n";
-			received_messages_count += 1;
-		}
+		//while( received_messages_count != children.size()){
+			//received_string = currentNode.listenForMultipleReplies(3034);
+			currentNode.listenForMultipleReplies(3034, numOfChildren);
+		//	received_messages_count += 1;
+			//std::cout << received_messages_count << " messages received" << std::endl;
+		//}
 		received_messages = HostName;
 		currentNode.send_message(currentNode.get_parent(0,2), 3034, received_messages);
 	}

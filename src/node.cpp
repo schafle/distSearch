@@ -23,6 +23,8 @@
 
 #include "node.h"
 
+static int connFd;
+
 /* Constructor */
 Node::Node(std::string hostName, int portNumber, int PosNum, string filename) {
 	hostName = hostName;
@@ -98,6 +100,113 @@ bool Node::am_i_leaf(int starting_node, int num_of_branches){
 }
 
 
+void *task1 (void *dummyPt)
+{
+    cout << "Thread No: " << pthread_self() << endl;
+    char test[300];
+    bzero(test, 301);
+    bool loop = false;
+  //  while(!loop)
+  //  {    
+        bzero(test, 301);
+        
+        
+        read(connFd, test, 300);
+        
+        string tester (test);
+        cout << tester << endl;
+        
+        
+    //    if(tester == "exit")
+      //      break;
+  //  }
+    cout << "\nClosing thread and conn" << endl;
+    close(connFd);
+}
+
+void multiple(TCPAcceptor* acceptor){
+
+	TCPStream* stream = NULL;
+	std::string received;
+	if (acceptor->start() == 0) {
+		stream = acceptor->accept();
+		if (stream != NULL) {
+			ssize_t len;
+			char line[256];
+			if ((len = stream->receive(line, sizeof(line))) > 0) {
+				line[len] = 0;
+				received = string(line);
+				std::cout << "received==>" << line << std::endl;
+			}
+		delete stream;
+		}
+	}
+	delete acceptor;
+}
+void Node::listenForMultipleReplies(int portNum, int numOfChildren){
+    int pId, portNo, listenFd;
+    socklen_t len; //store size of the address
+    bool loop = false;
+    struct sockaddr_in svrAdd, clntAdd;
+    
+    pthread_t threadA[2];
+    
+    portNo = portNum;
+    
+    //create socket
+    listenFd = socket(AF_INET, SOCK_STREAM, 0);
+    
+    if(listenFd < 0)
+    {
+        cerr << "Cannot open socket" << endl;
+    }
+    
+    bzero((char*) &svrAdd, sizeof(svrAdd));
+    
+    svrAdd.sin_family = AF_INET;
+    svrAdd.sin_addr.s_addr = INADDR_ANY;
+    svrAdd.sin_port = htons(portNo);
+    
+    //bind socket
+    if(bind(listenFd, (struct sockaddr *)&svrAdd, sizeof(svrAdd)) < 0)
+    {
+        cerr << "Cannot bind" << endl;
+    }
+    
+    listen(listenFd, 5);
+    
+    len = sizeof(clntAdd);
+    
+    int noThread = 0;
+
+    while (noThread < numOfChildren)
+    {
+        cout << "Listening" << endl;
+
+        //this is where client connects. svr will hang in this mode until client conn
+        connFd = accept(listenFd, (struct sockaddr *)&clntAdd, &len);
+
+        if (connFd < 0)
+        {
+            cerr << "Cannot accept connection" << endl;
+        }
+        else
+        {
+            cout << "Connection successful" << endl;
+        }
+        
+        pthread_create(&threadA[noThread], NULL, task1, NULL); 
+        
+        noThread++;
+    }
+    
+    for(int i = 0; i < numOfChildren; i++)
+    {
+        pthread_join(threadA[i], NULL);
+	std::cout << "Joined "<< i << "threads successfully!!" << std::endl;
+    }
+}
+
 std::string Node::listenOnTheReceivePort(int portNum){
 
 	TCPStream* stream = NULL;
@@ -114,8 +223,8 @@ std::string Node::listenOnTheReceivePort(int portNum){
 				received = string(line);
 				std::cout << "received==>" << line << std::endl;
 			}
-		}
 		delete stream;
+		}
 	}
 	delete acceptor;
 	return received;
