@@ -149,7 +149,7 @@ void Node::listenForMultipleReplies(int portNum, int numOfChildren){
     bool loop = false;
     struct sockaddr_in svrAdd, clntAdd;
     
-    pthread_t threadA[2];
+    pthread_t threadA[numOfChildren];
     
     portNo = portNum;
     
@@ -231,10 +231,10 @@ std::string Node::listenOnTheReceivePort(int portNum){
 }
 
 /* Get message from Parent */
-std::string Node::get_message(std::string HostName, int PortNumber){
+bool Node::get_message(std::string HostName, int PortNumber){
 	TCPStream* stream = NULL;
 	TCPAcceptor* acceptor = NULL;
-	acceptor = new TCPAcceptor( 3014, HostName.c_str());
+	acceptor = new TCPAcceptor( 3034, HostName.c_str());
 	char line[256];
 	if (acceptor->start() == 0) {
 		stream = acceptor->accept();
@@ -251,7 +251,7 @@ std::string Node::get_message(std::string HostName, int PortNumber){
 	delete stream;
 	delete acceptor;
 
-	return 0;	
+	return true;	
 }
 
 /* Send message to anyone */

@@ -54,10 +54,10 @@ pthread
 
 add_executable("binStarServer" "star.cpp" "src/node.cpp" "src/error.cpp" "${TCPIP_SOURCE_DIR}/tcpconnector.cpp" "${TCPIP_SOURCE_DIR}/tcpacceptor.cpp" "${TCPIP_SOURCE_DIR}/tcpstream.cpp")
 
-
 TARGET_LINK_LIBRARIES( "binStarServer"
 pthread
 )
+
 #target_link_libraries( "${PROJECT_BINARY_DIR}searchfiles"
 #	lucene++ boost_system
 #)

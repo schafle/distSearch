@@ -62,7 +62,7 @@ class Node{
 		bool am_i_leaf(int starting_node, int num_of_branches);
 
 		/* Get message from Parent */
-		std::string get_message(std::string ParentHostName, int PortNumber);
+		bool get_message(std::string ParentHostName, int PortNumber);
 		
 		/* Send message to Children */
 		bool send_message(std::string childName, int PortNumber, std::string message);	
