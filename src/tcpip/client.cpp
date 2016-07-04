@@ -37,15 +37,20 @@ int main(int argc, char** argv)
     }
 
     int len;
-    string message;
+    //string message;
     char line[256];
     TCPConnector* connector = new TCPConnector();
     TCPStream* stream = connector->connect(argv[2], atoi(argv[1]));
     if (stream) {
 	cout << "Enter your search term here" << endl;
-        cin >> message;
+        //cin >> message;
+	std::cin.getline (line,256);
+	cout << line << endl;
+	string message(line);
+	cout << message.size() << endl;
         stream->send(message.c_str(), message.size());
-        printf("sent - %s\n", message.c_str());
+        cout << message << endl;
+	printf("sent - %s\n", message.c_str());
         len = stream->receive(line, sizeof(line));
         line[len] = 0;
         delete stream;
