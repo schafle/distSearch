@@ -13,15 +13,17 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h> 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <fstream>
-#include <netdb.h>
 #include <cstdlib>
+#include <ctime>
+
+#include "easylogging++.h"
+
 //#include "query.h"
 #include "node.h"
-#include <ctime>
+
+#define ELPP_THREAD_SAFE 
+ 
+INITIALIZE_EASYLOGGINGPP
 
 #define numOfBranches 2
 #define SENDPORT 3033
@@ -31,9 +33,9 @@ void send_messages(std::vector<std::string> children, int portNum, Node currentN
 
 	for(std::vector<std::string>::iterator it = children.begin(); it != children.end(); ++it) {
 		if(!currentNode.send_message(*it, portNum, message ) ){  /* If Unsuccessful print the message */
-			error("ERROR while sending query to children");
+			LOG(ERROR) << "ERROR while sending query to children";
 		}
-		std::cout << "Sent the message to " <<  *it << std::endl;
+		LOG(INFO) << "Sent the message to " <<  *it;
 	}
 }
 
@@ -43,30 +45,77 @@ void receive_messages(std::vector<std::string> children, int portNum, Node curre
 	for(std::vector<std::string>::iterator it = children.begin(); it != children.end(); ++it) {
 
 		if(!currentNode.get_message(*it, 3034) ){ 
-			error("ERROR while receiving reply from children");
+			LOG(ERROR) << "ERROR while receiving reply from children";
 		}
-		std::cout << "Received reply from " <<  *it << std::endl;
+		LOG(INFO) << "Received reply from " <<  *it ;
 	}
 }
 
 int main(int argc, char* argv[]){
-	if(argc < 5){ 
-		std::cout << "Insufficient arguments to run" << std::endl;
-		std::cout << "./executable [indexDirectory] [positionInCluster] [HostName] [FileName]" << std::endl;
-		exit (EXIT_FAILURE);
+	if (argc < 2) {
+		std::cout << "Please provide some arguments" << std::endl;
+		std::cout << "Use -h/--help for reference" << std::endl;
+		exit(EXIT_FAILURE);
 	}
 
-	std::string index_location = argv[1];
-	int posNum = atoi(argv[2]);
-	std::string HostName = argv[3];
-	std::string NodeDetailsFile = argv[4];
-
-	int portNumber = 3033;
-
+	std::string index_location = ".";   		// Set to current working directory if not passed as input
+	std::string HostName;		   		// Must Have
+	std::string NodeDetailsFile = "filename.txt";	// Good to have
+	int posNum;		   	    		// Must have
+	int portNumber = 3033;		   		// Should not be set in most cases; 
+			                                // 3033 is our default sending port
+					    		// and 3034 is our default receiving port
+	int i;
+	for (i=1; i< argc; i=i+2) 
+	{
+		if(0 == strcmp(argv[i], "--indexdir"))
+		{
+			index_location = argv[i+1];
+		}
+		else if(0 == strcmp(argv[i], "--hostname"))
+		{	
+			HostName = argv[i+1];	
+		}
+		else if(0 == strcmp(argv[i], "--position"))
+		{
+			posNum = atoi(argv[i+1]);
+		}
+		else if(0 == strcmp(argv[i], "--port"))
+		{
+			portNumber = atoi(argv[i+1]);
+		}
+		else if(0 == strcmp(argv[i], "--filename"))
+		{
+			NodeDetailsFile = argv[i+1];
+		}
+		else if(0 == strcmp(argv[i], "--help") | 0 == strcmp(argv[i], "-h"))
+		{
+			std::cout << "Use of search server:" << std::endl;
+			std::cout << "\t./binServer" << std::endl;
+			std::cout << "\t\t --indexdir ~/Index/location" << std::endl;
+			std::cout << "\t\t --hostname ec2.fulldomain.name.amazon.com" << std::endl;
+			std::cout << "\t\t --filename filename.txt" << std::endl;
+			std::cout << "\t\t --position 3" << std::endl;
+			std::cout << "\t\t --port 3033" << std::endl;
+			exit(EXIT_SUCCESS);
+		}
+		else
+		{
+			std::cout << "Use of search server:" << std::endl;
+			std::cout << "\t./binServer" << std::endl;
+			std::cout << "\t\t --indexdir ~/Index/location" << std::endl;
+			std::cout << "\t\t --hostname ec2.fulldomain.name.amazon.com" << std::endl;
+			std::cout << "\t\t --filename filename.txt" << std::endl;
+			std::cout << "\t\t --position 3" << std::endl;
+			std::cout << "\t\t --port 3033" << std::endl;
+			exit(EXIT_FAILURE);
+		}
+	}
+	
 	/* Create a node object */
 	Node currentNode = Node( HostName, portNumber, posNum, NodeDetailsFile);
 
-	std::cout << "Listening for input on port: "<< portNumber << std::endl;
+	LOG(INFO) << "Listening for input on port: "<< portNumber;
 
 	/* Start listening on receivePort */
 	std::string received_string = currentNode.listenOnTheReceivePort(3033); 
@@ -85,50 +134,26 @@ int main(int argc, char* argv[]){
 	if(posNum==0){
 		start = std::clock();
 		/* Iterate ovr all the children and Forward query */
-		//for(std::vector<std::string>::iterator it = children.begin(); it != children.end(); ++it) {
-		//	if(!currentNode.send_message(*it, 3033, received_string ) ){  /* If Unsuccessful print the message */
-		//		error("ERROR while sending query to children");
-		//	}
-		//	std::cout << "Sent the message to " <<  *it << std::endl;
-		//}
-
 		// create a new thread to start listening for new messages
 		// std::thread receive(receive_messages, children, 3034, currentNode);
 		// create a new thread to send all the messages
 		 std::thread send (send_messages, children, 3033, currentNode, received_string);
 		 std::cout << "Waiting for children to send the message back" << std::endl;
-		 
-		// send.join();
-		// receive.join();
-
-		//while(received_messages_count != children.size()){
-		//received_string = currentNode.get_message(children[received_messages_count],3034);
-		//received_string = currentNode.listenOnTheReceivePort(3034);
-		//currentNode.listenForMultipleReplies(3034, numOfChildren)
-		// received_messages_count += 1;
-		// }
 
 		//This for loop represents that the root node is making connection serially to each node in cluster and 
 		//getting data from them. This can be done in two ways. 1. The serial way --> The for looop
 		//2. Parallel way --> create a thread to get data from each new connection, like subparents in tree
 		//For now we are going ahead with 1 since creating multiple threads will/can cause problems if not handled properly.
 		//Also need to find out how is it being done in the systems implementing star topology 
-		/*for(std::vector<std::string>::iterator it = children.begin(); it != children.end(); ++it) {
-
-		  if(!currentNode.get_message(*it, 3034) ){ 
-		  error("ERROR while receiving reply from children");
-		  }
-		  std::cout << "Receive reply from " <<  *it << std::endl;
-		  } */
 		currentNode.listenForMultipleReplies(3034, children.size()); /* The parallel way */
 		duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
 		received_messages = "Received all messages in "+ std::to_string(duration);
 		currentNode.send_message("localhost", 3035,received_messages);
-		std::cout<<"Received all messages in: "<< duration << "seconds" << std::endl;
+		LOG(INFO) <<"Received all messages in: "<< duration << " seconds";
 	}
 	/* Else open a connection and send message back to parent */
 	else{
-		std::cout << "Sending it back to parent "<< parent << std::endl;
+		LOG(INFO) << "Sending it back to parent "<< parent ;
 		currentNode.send_message(parent, 3034, HostName);
 	}
 

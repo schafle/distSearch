@@ -13,38 +13,90 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h> 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <fstream>
-#include <netdb.h>
-#include <cstdlib>
-//#include "query.h"
-#include "node.h"
 #include <ctime>
+
+#include "easylogging++.h"
+
+#include "node.h"
 
 #define numOfBranches 2
 #define SENDPORT 3033
 #define RECEIVEPORT 3034
 
+#define ELPP_THREAD_SAFE 
+
+INITIALIZE_EASYLOGGINGPP
+
 int main(int argc, char* argv[]){
-	if(argc < 5){ 
-		std::cout << "Insufficient arguments to run" << std::endl;
-		std::cout << "./executable [indexDirectory] [positionInCluster] [HostName] [FileName]" << std::endl;
-		exit (EXIT_FAILURE);
+
+	if (argc < 2) {
+		std::cout << "Please provide some arguments" << std::endl;
+		std::cout << "Use -h/--help for reference" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	//[indexDirectory] [positionInCluster] [HostName] [FileName
+
+	std::string index_location = ".";   		// Set to current working directory if not passed as input
+	std::string HostName;		   		// Must Have
+	std::string NodeDetailsFile = "filename.txt";	// Good to have
+	int posNum;		   	    		// Must have
+	int portNum = 3033;		   		// Should not be set in most cases; 
+	// 3033 is our default sending port
+	// and 3034 is our default receiving port
+
+	int i, j;
+	//Command line parsing
+	for (i=1; i< argc; i=i+2) 
+	{
+		if(0 == strcmp(argv[i], "--indexdir"))
+		{
+			index_location = argv[i+1];
+		}
+		else if(0 == strcmp(argv[i], "--hostname"))
+		{	
+			HostName = argv[i+1];	
+		}
+		else if(0 == strcmp(argv[i], "--position"))
+		{
+			posNum = atoi(argv[i+1]);
+		}
+		else if(0 == strcmp(argv[i], "--port"))
+		{
+			portNum = atoi(argv[i+1]);
+		}
+		else if(0 == strcmp(argv[i], "--filename"))
+		{
+			NodeDetailsFile = argv[i+1];
+		}
+		else if(0 == strcmp(argv[i], "--help") | 0 == strcmp(argv[i], "-h"))
+		{
+			std::cout << "Use of search server:" << std::endl;
+			std::cout << "\t./binServer" << std::endl;
+			std::cout << "\t\t --indexdir ~/Index/location" << std::endl;
+			std::cout << "\t\t --hostname ec2.fulldomain.name.amazon.com" << std::endl;
+			std::cout << "\t\t --filename filename.txt" << std::endl;
+			std::cout << "\t\t --position 3" << std::endl;
+			std::cout << "\t\t --port 3033" << std::endl;
+			exit(EXIT_SUCCESS);
+		}
+		else
+		{
+			std::cout << "Use of search server:" << std::endl;
+			std::cout << "\t./binServer" << std::endl;
+			std::cout << "\t\t --indexdir ~/Index/location" << std::endl;
+			std::cout << "\t\t --hostname ec2.fulldomain.name.amazon.com" << std::endl;
+			std::cout << "\t\t --filename filename.txt" << std::endl;
+			std::cout << "\t\t --position 3" << std::endl;
+			std::cout << "\t\t --port 3033" << std::endl;
+			exit(EXIT_FAILURE);
+		}
 	}
 
-	std::string index_location = argv[1];
-	int posNum = atoi(argv[2]);
-	std::string HostName = argv[3];
-	std::string NodeDetailsFile = argv[4];
-
-	int portNumber = 3033;
 
 	/* Create a node object */
-	Node currentNode = Node( HostName, portNumber, posNum, NodeDetailsFile);
+	Node currentNode = Node( HostName, portNum, posNum, NodeDetailsFile);
 
-	std::cout << "Listening for input on port: "<< portNumber << std::endl;
+	LOG(INFO) << "Listening for input on port: "<< portNum;
 
 	/* Start listening on receivePort */
 	std::string received_string = currentNode.listenOnTheReceivePort(3033); 
@@ -55,7 +107,7 @@ int main(int argc, char* argv[]){
 	std::vector<std::string>  children = currentNode.get_children(0, 2);
 
 	int numOfChildren = children.size();
-	std::cout << "I have "<< children.size() << " children." << std::endl;
+	//std::cout << "I have "<< children.size() << " children." << std::endl;
 	std::clock_t start;
 	double duration;
 	if(posNum==0){
@@ -67,40 +119,28 @@ int main(int argc, char* argv[]){
 		if(!currentNode.send_message(*it, 3033, received_string ) ){  /* If Unsuccessful print the message */
 			error("ERROR while sending query to children");
 		}
-		std::cout << "Sent the message to " <<  *it << std::endl;
+		LOG(INFO) << "Sent the message to child" <<  *it ;
 	}
 	std::string received_messages;
 	int received_messages_count = 0;
 
 	/* If leaf send its name to parent and thats it*/
 	if(currentNode.am_i_leaf(0,2)){
-		std::cout << "Sending it back to parent " << currentNode.get_parent(0,2) << std::endl;
+		LOG(INFO) << "Sending it back to parent " << currentNode.get_parent(0,2) << std::endl;
 		currentNode.send_message(currentNode.get_parent(0,2), 3034, HostName);
 	}
 	/* else if root send back to client */	
 	else if(posNum == 0){
 
-		std::cout << "children.size()==>" << children.size() << std::endl;
-	//	while(received_messages_count != children.size()){
-			//received_string = currentNode.listenForMultipleReplies(3034);
-			currentNode.listenForMultipleReplies(3034, numOfChildren);
-		//	std::cout << "Received from " << received_string << std::endl;
-	//		received_messages_count += 1;
-			//received_messages += HostName;
-	//	}
+		currentNode.listenForMultipleReplies(3034, numOfChildren);
 		duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
 		received_messages = "Received all messages in "+ std::to_string(duration);
 		currentNode.send_message("localhost", 3035,received_messages);
-		std::cout<<"Received all messages in: "<< duration << "seconds\n";
+		LOG(INFO) << "Received all messages in: "<< duration << " seconds" ;
 	}	
 	/* Else open a connection for collecting result from child and then send back to parent */
 	else{
-		//while( received_messages_count != children.size()){
-			//received_string = currentNode.listenForMultipleReplies(3034);
-			currentNode.listenForMultipleReplies(3034, numOfChildren);
-		//	received_messages_count += 1;
-			//std::cout << received_messages_count << " messages received" << std::endl;
-		//}
+		currentNode.listenForMultipleReplies(3034, numOfChildren);
 		received_messages = HostName;
 		currentNode.send_message(currentNode.get_parent(0,2), 3034, received_messages);
 	}
