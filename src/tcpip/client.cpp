@@ -26,8 +26,9 @@
 #include <iostream>
 #include "tcpconnector.h"
 #include "tcpacceptor.h"
+#include "easylogging++.h"
 
-using namespace std;
+INITIALIZE_EASYLOGGINGPP
 
 int main(int argc, char** argv)
 {
@@ -42,15 +43,16 @@ int main(int argc, char** argv)
     TCPConnector* connector = new TCPConnector();
     TCPStream* stream = connector->connect(argv[2], atoi(argv[1]));
     if (stream) {
-	cout << "Enter your search term here" << endl;
+	std::cout << "Enter your search term here" << std::endl;
         //cin >> message;
 	std::cin.getline (line,256);
-	cout << line << endl;
-	string message(line);
-	cout << message.size() << endl;
+	std::cout << line << std::endl;
+	std::string message(line);
+	cout << message.size() << std::endl;
         stream->send(message.c_str(), message.size());
-        cout << message << endl;
+        std::cout << message << std::endl;
 	printf("sent - %s\n", message.c_str());
+	LOG(INFO) << message ;
         len = stream->receive(line, sizeof(line));
         line[len] = 0;
         delete stream;
@@ -68,7 +70,7 @@ int main(int argc, char** argv)
                         if ((len = stream->receive(line, sizeof(line))) > 0) {
                                 line[len] = 0;
                                 received = string(line);
-                                cout << received << endl;
+                                std::cout << received << std::endl;
                         }
                 }
                 delete stream;

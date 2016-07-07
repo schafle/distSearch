@@ -33,6 +33,7 @@ find_package(Boost REQUIRED)
 
 include_directories(
 	"include"
+	"ext/logger"
 	)
 include_directories(
 	${demo_headers}
