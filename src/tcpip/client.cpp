@@ -24,8 +24,14 @@
 #include <stdlib.h>
 #include <string>
 #include <iostream>
+
+#include <boost/uuid/uuid.hpp>            // uuid class
+#include <boost/uuid/uuid_generators.hpp> // generators
+#include <boost/uuid/uuid_io.hpp>
+
 #include "tcpconnector.h"
 #include "tcpacceptor.h"
+
 #include "easylogging++.h"
 
 INITIALIZE_EASYLOGGINGPP
@@ -43,11 +49,12 @@ int main(int argc, char** argv)
     TCPConnector* connector = new TCPConnector();
     TCPStream* stream = connector->connect(argv[2], atoi(argv[1]));
     if (stream) {
+	boost::uuids::uuid uuid = boost::uuids::random_generator()();
+	std::string uuid_string = boost::uuids::to_string(uuid);
+	std::cout << uuid_string << std::endl;
 	std::cout << "Enter your search term here" << std::endl;
-        //cin >> message;
 	std::cin.getline (line,256);
-	std::cout << line << std::endl;
-	std::string message(line);
+	std::string message(uuid_string + "==>" + line);
 	cout << message.size() << std::endl;
         stream->send(message.c_str(), message.size());
         std::cout << message << std::endl;

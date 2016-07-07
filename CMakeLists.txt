@@ -73,6 +73,9 @@ include_directories(
 #Client
 add_executable("${PROJECT_BINARY_DIR}Client" "${TCPIP_SOURCE_DIR}/client.cpp" "${TCPIP_SOURCE_DIR}/tcpstream.cpp" "${TCPIP_SOURCE_DIR}/tcpconnector.cpp" "${TCPIP_SOURCE_DIR}/tcpacceptor.cpp")
 
+target_link_libraries( "${PROJECT_BINARY_DIR}Client"
+	boost_system
+)
 #Server_timeout
 #add_executable("${PROJECT_BINARY_DIR}ServerTimeout" "${TCPIP_SOURCE_DIR}/server_timeout.cpp" "${TCPIP_SOURCE_DIR}/tcpstream.cpp" "${TCPIP_SOURCE_DIR}/tcpacceptor.cpp" "${TCPIP_SOURCE_DIR}/tcpconnector.cpp")
 
