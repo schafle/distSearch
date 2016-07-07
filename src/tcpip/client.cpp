@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 
 	char wildcards;       // Currently supporting three file formats ==> Text, Images and Binary files
 	std::string query_text = "";
-	std::string rootnode = "";
+	std::string rootnode = "localhost";
 	std::string filename = "";
 	int portNum = 3033;	
 
@@ -139,15 +139,21 @@ int main(int argc, char** argv)
 	}
 	
 	std::string uuid = "";
-	if(rootnode.empty()){
+	if( rootnode == "localhost"){
 		LOG(INFO) << "Rootnode not provided; connecting to localhost";
-		rootnode = "localhost";
 	}
 	if(!filename.empty()){
 		LOG(INFO) << "Reading query from file "<< filename;	
 		std::ifstream file(filename);
-		std::string message((std::istreambuf_iterator<char>(file)),
-				std::istreambuf_iterator<char>());	
+		// The following is supposedly in-efficient way of reading file to string.
+		// See http://stackoverflow.com/a/2602060/2914543
+		//	std::string message((std::istreambuf_iterator<char>(file)),
+		//		std::istreambuf_iterator<char>());	
+		
+		// Following is the better way of doing it as per http://stackoverflow.com/a/2602258/2914543
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		std::string message = buffer.str();
 		uuid = send_query( message, rootnode, portNum);
 	}
 	else if(query_text.empty()){
