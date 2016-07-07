@@ -93,13 +93,13 @@ int main(int argc, char* argv[]){
 		//}
 
 		// create a new thread to start listening for new messages
-		std::thread receive(receive_messages, children, 3034, currentNode);
+		// std::thread receive(receive_messages, children, 3034, currentNode);
 		// create a new thread to send all the messages
-		std::thread send (send_messages, children, 3033, currentNode, received_string);
-		//std::cout << "Waiting for children to send the message back" << std::endl;
+		 std::thread send (send_messages, children, 3033, currentNode, received_string);
+		 std::cout << "Waiting for children to send the message back" << std::endl;
 		 
-		send.join();
-		receive.join();
+		// send.join();
+		// receive.join();
 
 		//while(received_messages_count != children.size()){
 		//received_string = currentNode.get_message(children[received_messages_count],3034);
@@ -120,7 +120,7 @@ int main(int argc, char* argv[]){
 		  }
 		  std::cout << "Receive reply from " <<  *it << std::endl;
 		  } */
-		//currentNode.listenForMultipleReplies(3034, children.size());
+		currentNode.listenForMultipleReplies(3034, children.size()); /* The parallel way */
 		duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
 		received_messages = "Received all messages in "+ std::to_string(duration);
 		currentNode.send_message("localhost", 3035,received_messages);
