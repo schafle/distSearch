@@ -11,8 +11,10 @@
 #include <iostream>
 #include <stdio.h>
 
+#include "easylogging++.h"
+
 void error(const char *msg)
 {
-    std::cout << msg << std::endl;
+    LOG(ERROR) << msg;
     //exit(1);
 }

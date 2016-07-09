@@ -21,6 +21,8 @@
 #include <iostream> 
 #include <cstdlib>
 
+#include "easylogging++.h"
+
 #include "node.h"
 
 static int connFd;
@@ -51,7 +53,7 @@ std::vector<std::string> Node::get_list_of_all_nodes(std::string filename){
 		myfile.close();
 	}
 
-	else cout << "Unable to open file";
+	else LOG(ERROR) << "Unable to open file "<< filename ;
 
 	//std::vector<std::string> IPs{"ip0", "localhost", "ip2", "ip3", "ip4", "ip5", "ip6", "ip7"}; 
 	return nodes;
@@ -102,26 +104,20 @@ bool Node::am_i_leaf(int starting_node, int num_of_branches){
 
 void *task1 (void *dummyPt)
 {
-    cout << "Thread No: " << pthread_self() << endl;
-    char test[300];
-    bzero(test, 301);
-    bool loop = false;
-  //  while(!loop)
-  //  {    
-        bzero(test, 301);
-        
-        
-        read(connFd, test, 300);
-        
-        string tester (test);
-        cout << tester << endl;
-        
-        
-    //    if(tester == "exit")
-      //      break;
-  //  }
-    cout << "\nClosing thread and conn" << endl;
-    close(connFd);
+	LOG(INFO) << "Thread created with ID " << pthread_self();
+	char test[300];
+	bzero(test, 301);
+	bool loop = false;
+	bzero(test, 301);
+
+
+	read(connFd, test, 300);
+
+	string received (test);
+	LOG(INFO) << "Query " << received.substr(0,32) << " is processed; size of the message is "<< received.size();        
+
+	LOG(INFO) << "Terminating thread " << pthread_self() << " and closing the connection";
+	close(connFd);
 }
 
 void multiple(TCPAcceptor* acceptor){
@@ -136,75 +132,75 @@ void multiple(TCPAcceptor* acceptor){
 			if ((len = stream->receive(line, sizeof(line))) > 0) {
 				line[len] = 0;
 				received = string(line);
-				std::cout << "received==>" << line << std::endl;
+				LOG(INFO) << "Query " << received.substr(0,32) << " received; size of the message is "<< received.size();
 			}
-		delete stream;
+			delete stream;
 		}
 	}
 	delete acceptor;
 }
 void Node::listenForMultipleReplies(int portNum, int numOfChildren){
-    int pId, portNo, listenFd;
-    socklen_t len; //store size of the address
-    bool loop = false;
-    struct sockaddr_in svrAdd, clntAdd;
-    
-    pthread_t threadA[numOfChildren];
-    
-    portNo = portNum;
-    
-    //create socket
-    listenFd = socket(AF_INET, SOCK_STREAM, 0);
-    
-    if(listenFd < 0)
-    {
-        cerr << "Cannot open socket" << endl;
-    }
-    
-    bzero((char*) &svrAdd, sizeof(svrAdd));
-    
-    svrAdd.sin_family = AF_INET;
-    svrAdd.sin_addr.s_addr = INADDR_ANY;
-    svrAdd.sin_port = htons(portNo);
-    
-    //bind socket
-    if(bind(listenFd, (struct sockaddr *)&svrAdd, sizeof(svrAdd)) < 0)
-    {
-        cerr << "Cannot bind" << endl;
-    }
-    
-    listen(listenFd, 5);
-    
-    len = sizeof(clntAdd);
-    
-    int noThread = 0;
+	int pId, portNo, listenFd;
+	socklen_t len; //store size of the address
+	bool loop = false;
+	struct sockaddr_in svrAdd, clntAdd;
 
-    while (noThread < numOfChildren)
-    {
-        cout << "Listening" << endl;
+	pthread_t threadA[numOfChildren];
 
-        //this is where client connects. svr will hang in this mode until client conn
-        connFd = accept(listenFd, (struct sockaddr *)&clntAdd, &len);
+	portNo = portNum;
 
-        if (connFd < 0)
-        {
-            cerr << "Cannot accept connection" << endl;
-        }
-        else
-        {
-            cout << "Connection successful" << endl;
-        }
-        
-        pthread_create(&threadA[noThread], NULL, task1, NULL); 
-        
-        noThread++;
-    }
-    
-    for(int i = 0; i < numOfChildren; i++)
-    {
-        pthread_join(threadA[i], NULL);
-	std::cout << "Joined "<< i << "threads successfully!!" << std::endl;
-    }
+	//create socket
+	listenFd = socket(AF_INET, SOCK_STREAM, 0);
+
+	if(listenFd < 0)
+	{
+		LOG(ERROR) << "Cannot open socket";
+	}
+
+	bzero((char*) &svrAdd, sizeof(svrAdd));
+
+	svrAdd.sin_family = AF_INET;
+	svrAdd.sin_addr.s_addr = INADDR_ANY;
+	svrAdd.sin_port = htons(portNo);
+
+	//bind socket
+	if(bind(listenFd, (struct sockaddr *)&svrAdd, sizeof(svrAdd)) < 0)
+	{
+		LOG(ERROR) << "Cannot bind";
+	}
+
+	listen(listenFd, 5);
+
+	len = sizeof(clntAdd);
+
+	int noThread = 0;
+
+	while (noThread < numOfChildren)
+	{
+		LOG(INFO) << "Listening for input on port: " << portNum;
+
+		//this is where client connects. svr will hang in this mode until client conn
+		connFd = accept(listenFd, (struct sockaddr *)&clntAdd, &len);
+
+		if (connFd < 0)
+		{
+			LOG(ERROR) << "Cannot accept connection";
+		}
+		else
+		{
+			LOG(INFO) << "Connection successful";
+		}
+
+		pthread_create(&threadA[noThread], NULL, task1, NULL); 
+
+		noThread++;
+	}
+
+	for(int i = 0; i < numOfChildren; i++)
+	{
+		pthread_join(threadA[i], NULL);
+		LOG(INFO) << "Joined "<< i << "threads successfully!!"; 
+	}
 }
 
 std::string Node::listenOnTheReceivePort(int portNum){
@@ -221,9 +217,9 @@ std::string Node::listenOnTheReceivePort(int portNum){
 			if ((len = stream->receive(line, sizeof(line))) > 0) {
 				line[len] = 0;
 				received = string(line);
-				std::cout << "received==>" << line << std::endl;
+				LOG(INFO) << "Query " << received.substr(0,32) << " received; size of the message is "<< received.size();
 			}
-		delete stream;
+			delete stream;
 		}
 	}
 	delete acceptor;
@@ -234,6 +230,7 @@ std::string Node::listenOnTheReceivePort(int portNum){
 bool Node::get_message(std::string HostName, int PortNumber){
 	TCPStream* stream = NULL;
 	TCPAcceptor* acceptor = NULL;
+	std::string received;
 	acceptor = new TCPAcceptor( 3034, HostName.c_str());
 	char line[256];
 	if (acceptor->start() == 0) {
@@ -242,7 +239,7 @@ bool Node::get_message(std::string HostName, int PortNumber){
 			ssize_t len;
 			while ((len = stream->receive(line, sizeof(line))) > 0) {
 				line[len] = 0;
-                                std::cout << "received==>" << line << std::endl;
+				LOG(INFO) << "Query " << received.substr(0,32) << " received; size of the message is "<< received.size();
 			}
 			//std::cout << "Got the message from parent: " <<line << std::endl;
 		}
@@ -265,7 +262,7 @@ bool Node::send_message(std::string HostName, int PortNumber, std::string messag
 		return true;
 	}
 	else{
-		std::cout << "Could not create connection with "<< HostName << std::endl;
+		LOG(ERROR) << "Could not create connection with "<< HostName;
 	}	
 	delete stream;
 	return false; 
@@ -294,13 +291,13 @@ std::string Node::receive_message_from_children(std::string childHostName, int P
 /* Send message to parent */
 int Node::send_message_to_parent(std::string ParentHostName, int PortNumber, std::string message){
 	/* Establish the connection */
-	std::cout << "Sending answer to "<< ParentHostName << std::endl;
+	LOG(INFO) << "Sending answer to parent "<< ParentHostName;
 	TCPConnector* connector = new TCPConnector();
 	//TCPStream* stream = connector->connect(ParentHostName.c_str(),PortNumber);
 	TCPStream* stream = connector->connect(ParentHostName.c_str(), 8013);
 	if (stream) {
 		stream->send(message.c_str(), message.size());
-		std::cout << "sent the reply to " << ParentHostName << std::endl;
+		LOG(INFO) << "sent the reply to parent " << ParentHostName;
 		return 1;
 	}
 	delete stream;
