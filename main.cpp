@@ -23,6 +23,16 @@
 
 INITIALIZE_EASYLOGGINGPP
 
+void send_messages(std::vector<std::string> children, int portNum, Node currentNode, std::string message){
+
+	for(std::vector<std::string>::iterator it = children.begin(); it != children.end(); ++it) {
+		if(!currentNode.send_message(*it, portNum, message ) ){  /* If Unsuccessful print the message */
+			LOG(ERROR) << "ERROR while sending query to children";
+		}
+		LOG(INFO) << "Sent the message to " <<  *it;
+	}
+}
+
 int main(int argc, char* argv[]){
 
 	if (argc < 2) {
@@ -121,14 +131,13 @@ int main(int argc, char* argv[]){
 	if(posNum==startNode){
 		start = std::clock();
 	}
-	/* Iterate ovr all the children and Forward query */
-	for(std::vector<std::string>::iterator it = children.begin(); it != children.end(); ++it) {
 
-		if(!currentNode.send_message(*it, 3033, received_string ) ){  /* If Unsuccessful print the message */
-			error("ERROR while sending query to children");
-		}
-		LOG(INFO) << "Sent the message to child " <<  *it ;
-	}
+	// create a new thread to send all the messages
+	std::thread send (send_messages, children, 3033, currentNode, received_string);
+	send.join();
+	
+	LOG(INFO) << "Done sending query to all the children; waiting for children to send the message back";
+	
 	int received_messages_count = 0;
 
 	/* If leaf send its name to parent and thats it*/

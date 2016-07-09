@@ -136,10 +136,12 @@ int main(int argc, char* argv[]){
 		/* Iterate ovr all the children and Forward query */
 		// create a new thread to start listening for new messages
 		// std::thread receive(receive_messages, children, 3034, currentNode);
+		
 		// create a new thread to send all the messages
-		 std::thread send (send_messages, children, 3033, currentNode, received_string);
-		 send.join();
-		 std::cout << "Waiting for children to send the message back" << std::endl;
+		std::thread send (send_messages, children, 3033, currentNode, received_string);
+		send.join();
+		
+		LOG(INFO) << "Done sending query to all the children; waiting for children to send the message back";
 		//This for loop represents that the root node is making connection serially to each node in cluster and 
 		//getting data from them. This can be done in two ways. 1. The serial way --> The for looop
 		//2. Parallel way --> create a thread to get data from each new connection, like subparents in tree
