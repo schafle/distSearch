@@ -138,8 +138,8 @@ int main(int argc, char* argv[]){
 		// std::thread receive(receive_messages, children, 3034, currentNode);
 		// create a new thread to send all the messages
 		 std::thread send (send_messages, children, 3033, currentNode, received_string);
+		 send.join();
 		 std::cout << "Waiting for children to send the message back" << std::endl;
-
 		//This for loop represents that the root node is making connection serially to each node in cluster and 
 		//getting data from them. This can be done in two ways. 1. The serial way --> The for looop
 		//2. Parallel way --> create a thread to get data from each new connection, like subparents in tree
@@ -147,14 +147,15 @@ int main(int argc, char* argv[]){
 		//Also need to find out how is it being done in the systems implementing star topology 
 		currentNode.listenForMultipleReplies(3034, children.size()); /* The parallel way */
 		duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
-		received_messages = "Received all messages in "+ std::to_string(duration);
-		currentNode.send_message("localhost", 3035,received_messages);
+		currentNode.send_message("localhost", 3035, std::to_string(duration));
 		LOG(INFO) <<"Received all messages in: "<< duration << " seconds";
 	}
 	/* Else open a connection and send message back to parent */
 	else{
 		LOG(INFO) << "Sending it back to parent "<< parent ;
-		currentNode.send_message(parent, 3034, HostName);
+		// Todo: For now we are just sending back the string we got from the parent
+		// In future we will send query results in place of received_string
+		currentNode.send_message(parent, 3034, received_string);
 	}
 
 }

@@ -114,7 +114,7 @@ void *task1 (void *dummyPt)
 	read(connFd, test, 300);
 
 	string received (test);
-	LOG(INFO) << "Query " << received.substr(0,32) << " is processed; size of the message is "<< received.size();        
+	LOG(INFO) << "Results for Query " << received.substr(0,36) << " is processed; size of the result is "<< received.size() << " Bytes";        
 
 	LOG(INFO) << "Terminating thread " << pthread_self() << " and closing the connection";
 	close(connFd);
@@ -132,7 +132,7 @@ void multiple(TCPAcceptor* acceptor){
 			if ((len = stream->receive(line, sizeof(line))) > 0) {
 				line[len] = 0;
 				received = string(line);
-				LOG(INFO) << "Query " << received.substr(0,32) << " received; size of the message is "<< received.size();
+				LOG(INFO) << "Results for Query " << received.substr(0,36) << " received; size of the result is "<< received.size();
 			}
 			delete stream;
 		}
@@ -217,7 +217,7 @@ std::string Node::listenOnTheReceivePort(int portNum){
 			if ((len = stream->receive(line, sizeof(line))) > 0) {
 				line[len] = 0;
 				received = string(line);
-				LOG(INFO) << "Query " << received.substr(0,32) << " received; size of the message is "<< received.size();
+				LOG(INFO) << "Query " << received.substr(0,36) << " received; size of the message is "<< received.size() << " Bytes";
 			}
 			delete stream;
 		}
@@ -239,7 +239,7 @@ bool Node::get_message(std::string HostName, int PortNumber){
 			ssize_t len;
 			while ((len = stream->receive(line, sizeof(line))) > 0) {
 				line[len] = 0;
-				LOG(INFO) << "Query " << received.substr(0,32) << " received; size of the message is "<< received.size();
+				LOG(INFO) << "Query " << received.substr(0,36) << " received; size of the message is "<< received.size();
 			}
 			//std::cout << "Got the message from parent: " <<line << std::endl;
 		}

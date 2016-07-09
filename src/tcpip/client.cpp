@@ -40,10 +40,10 @@ std::string send_query( std::string message, std::string rootnode, int portNum){
 	if (stream) {
 		boost::uuids::uuid uuid = boost::uuids::random_generator()();
 		std::string uuid_string = boost::uuids::to_string(uuid);
-
+		message = uuid_string + message;
 		stream->send(message.c_str(), message.size());
 		LOG(INFO) << "Message with UUID "<< uuid_string << " sent successfully";
-		LOG(INFO) << "Total data sent with message "<< uuid_string << " is " << message.size() << "Bytes";
+		LOG(INFO) << "Total data sent with message "<< uuid_string << " is " << message.size() << " Bytes";
 		delete stream;
 		return uuid_string;
 	}
@@ -179,6 +179,7 @@ int main(int argc, char** argv)
 					line[len] = 0;
 					received = string(line);
 					LOG(INFO) << "Received results for query " << uuid;
+					LOG(INFO) << "Query " << uuid << " returned all the messages in "<< received << " seconds";
 				}
 			}
 			delete stream;

@@ -19,10 +19,6 @@
 
 #include "node.h"
 
-#define numOfBranches 2
-#define SENDPORT 3033
-#define RECEIVEPORT 3034
-
 #define ELPP_THREAD_SAFE 
 
 INITIALIZE_EASYLOGGINGPP
@@ -43,7 +39,8 @@ int main(int argc, char* argv[]){
 	int portNum = 3033;		   		// Should not be set in most cases; 
 	// 3033 is our default sending port
 	// and 3034 is our default receiving port
-
+	int numOfBranches = 2;
+	int startNode = 0;
 	int i, j;
 	//Command line parsing
 	for (i=1; i< argc; i=i+2) 
@@ -60,9 +57,20 @@ int main(int argc, char* argv[]){
 		{
 			posNum = atoi(argv[i+1]);
 		}
+		else if(0 == strcmp(argv[i], "--numbranch"))
+		{
+			numOfBranches = atoi(argv[i+1]);
+			if (numOfBranches < 2){
+				std::cerr << "Num of Branches in tree must be greater than 2" << std::endl;
+			}
+		}
 		else if(0 == strcmp(argv[i], "--port"))
 		{
 			portNum = atoi(argv[i+1]);
+		}
+		else if(0 == strcmp(argv[i], "--startNode"))
+		{
+			startNode = atoi(argv[i+1]);
 		}
 		else if(0 == strcmp(argv[i], "--filename"))
 		{
@@ -104,13 +112,13 @@ int main(int argc, char* argv[]){
 
 	/* Get all the children */
 
-	std::vector<std::string>  children = currentNode.get_children(0, 2);
+	std::vector<std::string>  children = currentNode.get_children(startNode, numOfBranches);
 
 	int numOfChildren = children.size();
 	//std::cout << "I have "<< children.size() << " children." << std::endl;
 	std::clock_t start;
 	double duration;
-	if(posNum==0){
+	if(posNum==startNode){
 		start = std::clock();
 	}
 	/* Iterate ovr all the children and Forward query */
@@ -119,30 +127,30 @@ int main(int argc, char* argv[]){
 		if(!currentNode.send_message(*it, 3033, received_string ) ){  /* If Unsuccessful print the message */
 			error("ERROR while sending query to children");
 		}
-		LOG(INFO) << "Sent the message to child" <<  *it ;
+		LOG(INFO) << "Sent the message to child " <<  *it ;
 	}
-	std::string received_messages;
 	int received_messages_count = 0;
 
 	/* If leaf send its name to parent and thats it*/
-	if(currentNode.am_i_leaf(0,2)){
-		LOG(INFO) << "Sending it back to parent " << currentNode.get_parent(0,2) << std::endl;
-		currentNode.send_message(currentNode.get_parent(0,2), 3034, HostName);
+	if(currentNode.am_i_leaf(startNode, numOfBranches)){
+		LOG(INFO) << "Sending it back to parent " << currentNode.get_parent(startNode, numOfBranches) << std::endl;
+		currentNode.send_message(currentNode.get_parent(startNode, numOfBranches), 3034, received_string);
 	}
 	/* else if root send back to client */	
-	else if(posNum == 0){
+	else if(posNum == startNode){
 
 		currentNode.listenForMultipleReplies(3034, numOfChildren);
 		duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
-		received_messages = "Received all messages in "+ std::to_string(duration);
-		currentNode.send_message("localhost", 3035,received_messages);
+		currentNode.send_message("localhost", 3035, std::to_string(duration));
 		LOG(INFO) << "Received all messages in: "<< duration << " seconds" ;
 	}	
 	/* Else open a connection for collecting result from child and then send back to parent */
 	else{
 		currentNode.listenForMultipleReplies(3034, numOfChildren);
-		received_messages = HostName;
-		currentNode.send_message(currentNode.get_parent(0,2), 3034, received_messages);
+
+		// For current implementation we are sending back the string we got from the parent
+		// When query collection is implemented we will send back the results for each query
+		currentNode.send_message(currentNode.get_parent(startNode, numOfBranches), 3034, received_string); 
 	}
 	/* Make query irrespective of anything on the current node */
 }

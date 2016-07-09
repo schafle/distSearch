@@ -6,6 +6,3 @@ hostname_cmd="awk NR==$1 filename.txt"
 hostname=`$hostname_cmd`
 #echo $hostname
 ./binStarServer --indexdir . --position $position --hostname $hostname --filename filename.txt
-echo "    "
-echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "    "
