@@ -41,13 +41,37 @@ ssize_t TCPStream::send(const char* buffer, size_t len)
     return write(m_sd, buffer, len);
 }
 
+ssize_t readn(int fd, char *ptr, size_t n)
+{
+    size_t nleft;
+    ssize_t nread;
+
+    nleft = n;
+    while (nleft > 0) {
+        if ((nread = read(fd, ptr, nleft)) < 0) {
+            if (errno == EINTR)
+                /* Loop back and call read again. */
+                nread = 0;
+            else
+                /* Some other error; can't handle. */
+                return -1;
+        } else if (nread == 0)
+            /* EOF. */
+            break;
+
+        nleft -= nread;
+        ptr += nread;
+    }
+    return n - nleft;
+}
+
 ssize_t TCPStream::receive(char* buffer, size_t len, int timeout) 
 {
-    if (timeout <= 0) return read(m_sd, buffer, len);
+    if (timeout <= 0) return readn(m_sd, buffer, len);
 
     if (waitForReadEvent(timeout) == true)
     {
-        return read(m_sd, buffer, len);
+        return readn(m_sd, buffer, len);
     }
     return connectionTimedOut;
 

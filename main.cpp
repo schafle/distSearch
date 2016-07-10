@@ -130,14 +130,13 @@ int main(int argc, char* argv[]){
 	double duration;
 	if(posNum==startNode){
 		start = std::clock();
-	}
 
-	// create a new thread to send all the messages
-	std::thread send (send_messages, children, 3033, currentNode, received_string);
-	send.join();
-	
-	LOG(INFO) << "Done sending query to all the children; waiting for children to send the message back";
-	
+		// create a new thread to send all the messages
+		std::thread send (send_messages, children, 3033, currentNode, received_string);
+		send.join();
+
+		LOG(INFO) << "Done sending query to all the children; waiting for children to send the message back";
+	}
 	int received_messages_count = 0;
 
 	/* If leaf send its name to parent and thats it*/

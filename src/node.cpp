@@ -102,16 +102,40 @@ bool Node::am_i_leaf(int starting_node, int num_of_branches){
 }
 
 
+ssize_t readmultiple(int fd, char *ptr, size_t n)
+{
+    size_t nleft;
+    ssize_t nread;
+
+    nleft = n;
+    while (nleft > 0) {
+        if ((nread = read(fd, ptr, nleft)) < 0) {
+            if (errno == EINTR)
+                /* Loop back and call read again. */
+                nread = 0;
+            else
+                /* Some other error; can't handle. */
+                return -1;
+        } else if (nread == 0)
+            /* EOF. */
+            break;
+
+        nleft -= nread;
+        ptr += nread;
+    }
+    return n - nleft;
+}
+
 void *task1 (void *dummyPt)
 {
 	LOG(INFO) << "Thread created with ID " << pthread_self();
-	char test[300];
-	bzero(test, 301);
+	char test[1048576];
+	bzero(test, 1048577);
 	bool loop = false;
-	bzero(test, 301);
+	bzero(test, 1048577);
 
 
-	read(connFd, test, 300);
+	readmultiple(connFd, test, 1048576);
 
 	string received (test);
 	LOG(INFO) << "Results for Query " << received.substr(0,36) << " is processed; size of the result is "<< received.size() << " Bytes";        
@@ -213,7 +237,7 @@ std::string Node::listenOnTheReceivePort(int portNum){
 		stream = acceptor->accept();
 		if (stream != NULL) {
 			ssize_t len;
-			char line[256];
+			char line[1048576];
 			if ((len = stream->receive(line, sizeof(line))) > 0) {
 				line[len] = 0;
 				received = string(line);
@@ -232,7 +256,7 @@ bool Node::get_message(std::string HostName, int PortNumber){
 	TCPAcceptor* acceptor = NULL;
 	std::string received;
 	acceptor = new TCPAcceptor( 3034, HostName.c_str());
-	char line[256];
+	char line[1048576];
 	if (acceptor->start() == 0) {
 		stream = acceptor->accept();
 		if (stream != NULL) {
@@ -309,10 +333,10 @@ std::string Node::get_input(int sock)
 {
 	//Reads incoming requests
 	int n;
-	char buffer[256];
+	char buffer[1048576];
 
-	bzero(buffer,256);
-	n = read(sock,buffer,255);
+	bzero(buffer, 1048576);
+	n = read(sock,buffer,1048575);
 	if (n < 0) error("ERROR reading from socket");
 	std::string str= std::string(buffer);
 	return str;
