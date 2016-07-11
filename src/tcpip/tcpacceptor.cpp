@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 #include "tcpacceptor.h"
 
+
 TCPAcceptor::TCPAcceptor(int port, const char* address) 
     : m_lsd(0), m_port(port), m_address(address), m_listening(false) {} 
 
@@ -54,7 +55,7 @@ int TCPAcceptor::start()
     else {
         address.sin_addr.s_addr = INADDR_ANY;
     }
-    
+     
     int optval = 1;
     setsockopt(m_lsd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval); 
     
@@ -64,7 +65,7 @@ int TCPAcceptor::start()
         return result;
     }
     
-    result = listen(m_lsd, 5);
+    result = listen(m_lsd, SOMAXCONN);
     if (result != 0) {
         perror("listen() failed");
         return result;

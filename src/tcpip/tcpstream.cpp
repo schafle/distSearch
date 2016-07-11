@@ -23,7 +23,7 @@
 
 #include <arpa/inet.h>
 #include "tcpstream.h"
-
+#include <iostream>
 TCPStream::TCPStream(int sd, struct sockaddr_in* address) : m_sd(sd) {
     char ip[50];
     inet_ntop(PF_INET, (struct in_addr*)&(address->sin_addr.s_addr), ip, sizeof(ip)-1);
@@ -45,7 +45,7 @@ ssize_t readn(int fd, char *ptr, size_t n)
 {
     size_t nleft;
     ssize_t nread;
-
+    ssize_t bytes_read=0;
     nleft = n;
     while (nleft > 0) {
         if ((nread = read(fd, ptr, nleft)) < 0) {
@@ -58,9 +58,10 @@ ssize_t readn(int fd, char *ptr, size_t n)
         } else if (nread == 0)
             /* EOF. */
             break;
-
         nleft -= nread;
         ptr += nread;
+	bytes_read += nread;
+	std::cout << "Bytes_read = "<< bytes_read << std::endl;
     }
     return n - nleft;
 }

@@ -25,7 +25,7 @@
 
 #include "node.h"
 
-static int connFd;
+#define HUNDMB 10000000
 
 /* Constructor */
 Node::Node(std::string hostName, int portNumber, int PosNum, string filename) {
@@ -104,38 +104,58 @@ bool Node::am_i_leaf(int starting_node, int num_of_branches){
 
 ssize_t readmultiple(int fd, char *ptr, size_t n)
 {
-    size_t nleft;
-    ssize_t nread;
+	size_t nleft;
+	ssize_t nread;
 
-    nleft = n;
-    while (nleft > 0) {
-        if ((nread = read(fd, ptr, nleft)) < 0) {
-            if (errno == EINTR)
-                /* Loop back and call read again. */
-                nread = 0;
-            else
-                /* Some other error; can't handle. */
-                return -1;
-        } else if (nread == 0)
-            /* EOF. */
-            break;
+	nleft = n;
+	while (nleft > 0) {
+		if ((nread = read(fd, ptr, nleft)) < 0) {
+			if (errno == EINTR)
+				/* Loop back and call read again. */
+				nread = 0;
+			else
+				/* Some other error; can't handle. */
+				return -1;
+		} else if (nread == 0)
+			/* EOF. */
+			break;
 
-        nleft -= nread;
-        ptr += nread;
-    }
-    return n - nleft;
+		nleft -= nread;
+		ptr += nread;
+	}
+	return n - nleft;
 }
 
-void *task1 (void *dummyPt)
+void *task1 (int connFd)
 {
 	LOG(INFO) << "Thread created with ID " << pthread_self();
-	char test[1048576];
-	bzero(test, 1048577);
+	char test[HUNDMB];
+	bzero(test, HUNDMB);
 	bool loop = false;
-	bzero(test, 1048577);
+	bzero(test, HUNDMB);
 
 
-	readmultiple(connFd, test, 1048576);
+	size_t nleft;
+	ssize_t nread;
+	char *ptr = test;
+	nleft = HUNDMB;
+	while (nleft > 0) {
+		if ((nread = read(connFd, test, nleft)) < 0) {
+			if (errno == EINTR)
+				/* Loop back and call read again. */
+				nread = 0;
+			else
+				/* Some other error; can't handle. */
+				std::cout << "Some other error; can't handle" << std::endl; //return; // -1;
+		} else if (nread == 0)
+			/* EOF. */
+			break;
+
+		nleft -= nread;
+		ptr += nread;
+	}
+	//return n - nleft;
+	//read(connFd, test, 1048576);
 
 	string received (test);
 	LOG(INFO) << "Results for Query " << received.substr(0,36) << " is processed; size of the result is "<< received.size() << " Bytes";        
@@ -144,86 +164,35 @@ void *task1 (void *dummyPt)
 	close(connFd);
 }
 
-void multiple(TCPAcceptor* acceptor){
-
-	TCPStream* stream = NULL;
+void multiple(TCPStream* stream){
 	std::string received;
-	if (acceptor->start() == 0) {
-		stream = acceptor->accept();
-		if (stream != NULL) {
-			ssize_t len;
-			char line[256];
-			if ((len = stream->receive(line, sizeof(line))) > 0) {
-				line[len] = 0;
-				received = string(line);
-				LOG(INFO) << "Results for Query " << received.substr(0,36) << " received; size of the result is "<< received.size();
-			}
-			delete stream;
-		}
+	ssize_t len;
+	char* line = new char[HUNDMB];
+	LOG(INFO) << "Thread created with ID: " << std::this_thread::get_id();
+	if ((len = stream->receive(line, HUNDMB)) > 0) {
+		received = string(line);
+		LOG(INFO) << "Results for Query " << received.substr(0,36) << " received; size of the result is "<< received.size();
 	}
-	delete acceptor;
 }
 void Node::listenForMultipleReplies(int portNum, int numOfChildren){
-	int pId, portNo, listenFd;
-	socklen_t len; //store size of the address
-	bool loop = false;
-	struct sockaddr_in svrAdd, clntAdd;
-
-	pthread_t threadA[numOfChildren];
-
-	portNo = portNum;
-
-	//create socket
-	listenFd = socket(AF_INET, SOCK_STREAM, 0);
-
-	if(listenFd < 0)
-	{
-		LOG(ERROR) << "Cannot open socket";
-	}
-
-	bzero((char*) &svrAdd, sizeof(svrAdd));
-
-	svrAdd.sin_family = AF_INET;
-	svrAdd.sin_addr.s_addr = INADDR_ANY;
-	svrAdd.sin_port = htons(portNo);
-
-	//bind socket
-	if(bind(listenFd, (struct sockaddr *)&svrAdd, sizeof(svrAdd)) < 0)
-	{
-		LOG(ERROR) << "Cannot bind";
-	}
-
-	listen(listenFd, 5);
-
-	len = sizeof(clntAdd);
-
-	int noThread = 0;
-
-	while (noThread < numOfChildren)
-	{
-		LOG(INFO) << "Listening for input on port: " << portNum;
-
-		//this is where client connects. svr will hang in this mode until client conn
-		connFd = accept(listenFd, (struct sockaddr *)&clntAdd, &len);
-
-		if (connFd < 0)
-		{
-			LOG(ERROR) << "Cannot accept connection";
+	std::thread threadA[numOfChildren];
+	TCPStream* stream = NULL;
+	TCPAcceptor* acceptor = new TCPAcceptor(portNum);
+	if (acceptor->start() == 0) {
+		for (int i = 0; i < numOfChildren; ++i){
+			LOG(INFO) << "Listening for input on port: " << portNum;
+			stream = acceptor->accept();
+			if (stream != NULL) {
+				LOG(INFO) << "Connection Successful";
+				threadA[i] = std::thread(multiple, stream);
+			}
 		}
-		else
-		{
-			LOG(INFO) << "Connection successful";
-		}
-
-		pthread_create(&threadA[noThread], NULL, task1, NULL); 
-
-		noThread++;
 	}
 
 	for(int i = 0; i < numOfChildren; i++)
 	{
-		pthread_join(threadA[i], NULL);
-		LOG(INFO) << "Joined "<< i << "threads successfully!!"; 
+		threadA[i].join();
+		LOG(INFO) << "Joined "<< i+1 << "threads successfully!!"; 
 	}
 }
 
@@ -237,9 +206,8 @@ std::string Node::listenOnTheReceivePort(int portNum){
 		stream = acceptor->accept();
 		if (stream != NULL) {
 			ssize_t len;
-			char line[1048576];
-			if ((len = stream->receive(line, sizeof(line))) > 0) {
-				line[len] = 0;
+			char* line = new char[HUNDMB];
+			if ((len = stream->receive(line, HUNDMB)) > 0) {
 				received = string(line);
 				LOG(INFO) << "Query " << received.substr(0,36) << " received; size of the message is "<< received.size() << " Bytes";
 			}
@@ -256,7 +224,7 @@ bool Node::get_message(std::string HostName, int PortNumber){
 	TCPAcceptor* acceptor = NULL;
 	std::string received;
 	acceptor = new TCPAcceptor( 3034, HostName.c_str());
-	char line[1048576];
+			char* line = new char[HUNDMB];
 	if (acceptor->start() == 0) {
 		stream = acceptor->accept();
 		if (stream != NULL) {
@@ -298,12 +266,12 @@ std::string Node::receive_message_from_children(std::string childHostName, int P
 	TCPStream* stream = NULL;
 	TCPAcceptor* acceptor = NULL;
 	acceptor = new TCPAcceptor( 8013, childHostName.c_str());
-	char line[1000];
+			char* line = new char[HUNDMB];
 	if (acceptor->start() == 0) {
 		stream = acceptor->accept();
 		if (stream != NULL) {
 			ssize_t len;
-			while ((len = stream->receive(line, sizeof(line))) > 0) {
+			while ((len = stream->receive(line, HUNDMB)) > 0) {
 				line[len] = 0;
 			}
 		}
@@ -333,10 +301,10 @@ std::string Node::get_input(int sock)
 {
 	//Reads incoming requests
 	int n;
-	char buffer[1048576];
+	char buffer[HUNDMB];
 
-	bzero(buffer, 1048576);
-	n = read(sock,buffer,1048575);
+	bzero(buffer, HUNDMB);
+	n = read(sock,buffer, HUNDMB);
 	if (n < 0) error("ERROR reading from socket");
 	std::string str= std::string(buffer);
 	return str;
