@@ -1,5 +1,16 @@
+echo -n > start_tree.sh
+echo -n > start_star.sh
+client=`awk NR==1 filename.txt`
+scp -o StrictHostKeyChecking=no -i ~/Michigan.pem generate_input.sh ubuntu@$client:/home/ubuntu
+ssh -o StrictHostKeyChecking=no -n -i ~/Michigan.pem -T ubuntu@$client 'killall -9 binClient'
+let index=1
 while read p; do
-  ssh -n -i ~/Michigan.pem -T ubuntu@$p 'killall -9 binServer'
-  ssh -n -i ~/Michigan.pem -T ubuntu@$p 'killall -9 binStarServer'
-  scp -i ~/Michigan.pem ../bin/binServer ../bin/binStarServer ../bin/binClient run.sh star.sh filename.txt ubuntu@$p:/home/ubuntu
+  ssh -o StrictHostKeyChecking=no -n -i ~/Michigan.pem -T ubuntu@$p 'killall -9 binServer'
+  ssh -o StrictHostKeyChecking=no -n -i ~/Michigan.pem -T ubuntu@$p 'killall -9 binStarServer'
+  scp -o StrictHostKeyChecking=no -i ~/Michigan.pem ../bin/binServer ../bin/binStarServer ../bin/binClient run.sh star.sh filename.txt ubuntu@$p:/home/ubuntu
+  echo "ssh -o StrictHostKeyChecking=no -n -i ~/Michigan.pem -T ubuntu@$p 'screen -d -m ./run.sh $index &'" >> start_tree.sh
+  echo "ssh -o StrictHostKeyChecking=no -n -i ~/Michigan.pem -T ubuntu@$p 'screen -d -m ./star.sh $index &'" >> start_star.sh
+let "index++"
 done <filename.txt
+chmod 700 start_tree.sh
+chmod 700 start_star.sh
