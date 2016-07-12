@@ -19,7 +19,6 @@
 #include "FilterIndexReader.h"
 #include "OneNormsReader.h"
 #include "MiscUtils.h"
-#include "doPagingSearch.h"
 #include "query.h"
 
 using namespace Lucene;
@@ -66,7 +65,7 @@ static void doStreamingSearch(const SearcherPtr& searcher, const QueryPtr& query
 	searcher->search(query, newLucene<StreamingHitCollector>());
 }
 
-int run_query(std::string index_location, std::string line){
+int run_query(std::string index_location, std::string line, int hpp) { //hpp ==  hits per page
 	/*if (argc == 1 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "-help") == 0) {
 		std::wcout << L"Usage: searchfiles.exe [-index dir] [-field f] [-repeat n] [-queries file] [-raw] ";
 		std::wcout << L"[-norms field] [-paging hitsPerPage]\n\n";
@@ -86,6 +85,7 @@ int run_query(std::string index_location, std::string line){
 		int32_t hitsPerPage = 10;
 
 		index = StringUtils::toUnicode(index_location.c_str());
+		hitsPerPage = hpp;
 		/* for (int32_t i = 0; i < argc; ++i) {
 			if (strcmp(argv[i], "-index") == 0) {
 				index = StringUtils::toUnicode(argv[i + 1]);
@@ -184,41 +184,3 @@ int run_query(std::string index_location, std::string line){
 
 }
 
-/// Simple command-line based search demo.
-//int make_query(std::string index_location) {
-int make_query(std::string index_location) {
-
-	TCPStream* stream = NULL;
-	TCPAcceptor* acceptor = NULL;
-	//if (argc == 3) {
-	acceptor = new TCPAcceptor(atoi("3033"), "localhost");
-	//}
-	//else {
-	//	acceptor = new TCPAcceptor(atoi(argv[1]));
-	//}
-
-	char received_line[256];
-	if (acceptor->start() == 0) {
-		while (1) {
-			stream = acceptor->accept();
-			if (stream != NULL) {
-				ssize_t len;
-				char received_line[256];
-				while ((len = stream->receive(received_line, sizeof(received_line))) > 0) {
-					received_line[len] = 0;
-					printf("searching for: %s\n", received_line);
-					std::string line(received_line);
-					int a = run_query( index_location, line);
-					//int a = run_query(argc, argv,line);
-					std:string response = std::to_string(a) + " matching documents found";
-					stream->send(response.c_str(), 30);
-				}
-				delete stream;
-			}
-		}
-	}
-
-	//std::string line(received_line);
-	//int a = run_query(argc,argv,line);
-
-}
