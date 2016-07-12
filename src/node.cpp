@@ -25,7 +25,7 @@
 
 #include "node.h"
 
-#define HUNDMB 10000000
+#define HUNDMB 640001
 
 /* Constructor */
 Node::Node(std::string hostName, int portNumber, int PosNum, string filename) {
@@ -171,7 +171,9 @@ void multiple(TCPStream* stream){
 	LOG(INFO) << "Thread created with ID: " << std::this_thread::get_id();
 	if ((len = stream->receive(line, HUNDMB)) > 0) {
 		received = string(line);
-		LOG(INFO) << "Results for Query " << received.substr(0,36) << " received; size of the result is "<< received.size();
+		LOG(INFO) << "Results for Query " << received.substr(0,36) << " is processed; size of the result is "<< received.size() << " Bytes";        
+		LOG(INFO) << "Terminating thread " << std::this_thread::get_id() << " and closing the connection";
+		delete stream;
 	}
 }
 void Node::listenForMultipleReplies(int portNum, int numOfChildren){
@@ -224,7 +226,7 @@ bool Node::get_message(std::string HostName, int PortNumber){
 	TCPAcceptor* acceptor = NULL;
 	std::string received;
 	acceptor = new TCPAcceptor( 3034, HostName.c_str());
-			char* line = new char[HUNDMB];
+	char* line = new char[HUNDMB];
 	if (acceptor->start() == 0) {
 		stream = acceptor->accept();
 		if (stream != NULL) {
@@ -266,7 +268,7 @@ std::string Node::receive_message_from_children(std::string childHostName, int P
 	TCPStream* stream = NULL;
 	TCPAcceptor* acceptor = NULL;
 	acceptor = new TCPAcceptor( 8013, childHostName.c_str());
-			char* line = new char[HUNDMB];
+	char* line = new char[HUNDMB];
 	if (acceptor->start() == 0) {
 		stream = acceptor->accept();
 		if (stream != NULL) {

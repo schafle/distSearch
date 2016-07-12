@@ -61,7 +61,6 @@ ssize_t readn(int fd, char *ptr, size_t n)
         nleft -= nread;
         ptr += nread;
 	bytes_read += nread;
-	std::cout << "Bytes_read = "<< bytes_read << std::endl;
     }
     return n - nleft;
 }

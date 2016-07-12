@@ -37,6 +37,7 @@ void send_messages(std::vector<std::string> children, int portNum, Node currentN
 		}
 		LOG(INFO) << "Sent the message to " <<  *it;
 	}
+	LOG(INFO) << "Done sending query to all the children; waiting for children to send the message back";
 }
 
 
@@ -63,8 +64,8 @@ int main(int argc, char* argv[]){
 	std::string NodeDetailsFile = "filename.txt";	// Good to have
 	int posNum;		   	    		// Must have
 	int portNumber = 3033;		   		// Should not be set in most cases; 
-			                                // 3033 is our default sending port
-					    		// and 3034 is our default receiving port
+	// 3033 is our default sending port
+	// and 3034 is our default receiving port
 	int i;
 	for (i=1; i< argc; i=i+2) 
 	{
@@ -111,7 +112,7 @@ int main(int argc, char* argv[]){
 			exit(EXIT_FAILURE);
 		}
 	}
-	
+
 	/* Create a node object */
 	Node currentNode = Node( HostName, portNumber, posNum, NodeDetailsFile);
 
@@ -136,11 +137,10 @@ int main(int argc, char* argv[]){
 		/* Iterate ovr all the children and Forward query */
 		// create a new thread to start listening for new messages
 		// std::thread receive(receive_messages, children, 3034, currentNode);
-		
+
 		// create a new thread to send all the messages
 		std::thread send (send_messages, children, 3033, currentNode, received_string);
-		send.join();
-		
+
 		LOG(INFO) << "Done sending query to all the children; waiting for children to send the message back";
 		//This for loop represents that the root node is making connection serially to each node in cluster and 
 		//getting data from them. This can be done in two ways. 1. The serial way --> The for looop
@@ -148,6 +148,7 @@ int main(int argc, char* argv[]){
 		//For now we are going ahead with 1 since creating multiple threads will/can cause problems if not handled properly.
 		//Also need to find out how is it being done in the systems implementing star topology 
 		currentNode.listenForMultipleReplies(3034, children.size()); /* The parallel way */
+		send.join();
 		duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
 		currentNode.send_message("localhost", 3035, std::to_string(duration));
 		LOG(INFO) <<"Received all messages in: "<< duration << " seconds";

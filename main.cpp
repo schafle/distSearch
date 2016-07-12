@@ -128,15 +128,6 @@ int main(int argc, char* argv[]){
 	//std::cout << "I have "<< children.size() << " children." << std::endl;
 	std::clock_t start;
 	double duration;
-	if(posNum==startNode){
-		start = std::clock();
-
-		// create a new thread to send all the messages
-		std::thread send (send_messages, children, 3033, currentNode, received_string);
-		send.join();
-
-		LOG(INFO) << "Done sending query to all the children; waiting for children to send the message back";
-	}
 	int received_messages_count = 0;
 
 	/* If leaf send its name to parent and thats it*/
@@ -147,13 +138,26 @@ int main(int argc, char* argv[]){
 	/* else if root send back to client */	
 	else if(posNum == startNode){
 
+		start = std::clock();
+
+		// create a new thread to send all the messages
+		std::thread send (send_messages, children, 3033, currentNode, received_string);
+
+		LOG(INFO) << "Done sending query to all the children; waiting for children to send the message back";
+		
 		currentNode.listenForMultipleReplies(3034, numOfChildren);
+		send.join();
 		duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
 		currentNode.send_message("localhost", 3035, std::to_string(duration));
 		LOG(INFO) << "Received all messages in: "<< duration << " seconds" ;
 	}	
 	/* Else open a connection for collecting result from child and then send back to parent */
 	else{
+		// create a new thread to send all the messages
+		std::thread send (send_messages, children, 3033, currentNode, received_string);
+		send.join();
+
+		LOG(INFO) << "Done sending query to all the children; waiting for children to send the message back";
 		currentNode.listenForMultipleReplies(3034, numOfChildren);
 
 		// For current implementation we are sending back the string we got from the parent
