@@ -130,16 +130,15 @@ int main(int argc, char* argv[]){
 	std::clock_t start;
 	double duration;
 	int received_messages_count = 0;
-
+	std::string search_results;
+	std::string uuid;
 	/* If leaf send its name to parent and thats it*/
 	if(currentNode.am_i_leaf(startNode, numOfBranches)){
-		//LOG(INFO) << "Sending it back to parent " << currentNode.get_parent(startNode, numOfBranches) << std::endl;
-		//currentNode.send_message(currentNode.get_parent(startNode, numOfBranches), 3034, received_string);
-		std::cout << "Searching "<< std::endl;
-		//make_query(index_location);
-		std::cout << run_query( index_location, received_string.substr(36), 2, received_string.substr(0,36)) << std::endl;
-		std::cout << "Done searching!!"<< std::endl;
-		exit(EXIT_FAILURE);
+		uuid = received_string.substr(0,36);
+		search_results = run_query( index_location, received_string.substr(36), 2, uuid, HostName) << std::endl;
+		LOG(INFO) << uuid << " Done searching!!";
+		LOG(INFO) << uuid << " Sending results back to parent " << currentNode.get_parent(startNode, numOfBranches) << std::endl;
+		currentNode.send_message(currentNode.get_parent(startNode, numOfBranches), 3034, search_results);
 	}
 	/* else if root send back to client */	
 	else if(posNum == startNode){

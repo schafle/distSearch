@@ -9,17 +9,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "tcpacceptor.h"
-
-#include "targetver.h"
 #include <iostream>
 #include <boost/algorithm/string.hpp>
+
 #include "LuceneHeaders.h"
 #include "FilterIndexReader.h"
 #include "OneNormsReader.h"
 #include "MiscUtils.h"
+#include "targetver.h"
+
 #include "query.h"
+#include "easylogging++.h"
+#include "tcpacceptor.h"
 
 using namespace Lucene;
 
@@ -65,7 +66,7 @@ static void doStreamingSearch(const SearcherPtr& searcher, const QueryPtr& query
 	searcher->search(query, newLucene<StreamingHitCollector>());
 }
 
-std::string run_query(std::string index_location, std::string line, int hpp, std::string uuid) { //hpp ==  hits per page
+std::string run_query(std::string index_location, std::string line, int hpp, std::string uuid, std::string hostName) { //hpp ==  hits per page
 	/*if (argc == 1 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "-help") == 0) {
 		std::wcout << L"Usage: searchfiles.exe [-index dir] [-field f] [-repeat n] [-queries file] [-raw] ";
 		std::wcout << L"[-norms field] [-paging hitsPerPage]\n\n";
@@ -137,22 +138,23 @@ std::string run_query(std::string index_location, std::string line, int hpp, std
 		ws.assign(line.begin(), line.end());
 		std::wcout << ws << std::endl;
 		QueryPtr query = parser->parse(ws);
-		std::wcout << L"Searching for: " << query->toString(field) << L"\n";
+		LOG(INFO) << uuid << " Searching for: " << query->toString(field);
 
+		/* Not interested in time as benchmark
 		if (repeat > 0) { // repeat and time as benchmark
 			int64_t start = MiscUtils::currentTimeMillis();
 			for (int32_t i = 0; i < repeat; ++i) {
 				searcher->search(query, FilterPtr(), 100);
 			}
 			std::wcout << L"Time: " << (MiscUtils::currentTimeMillis() - start) << L"ms\n";
-		}
+		}*/
 
 		if (paging) {
 			//Original function call
 			//doc_found = doPagingSearch(searcher, query, hitsPerPage, raw, queries.empty(), uuid);
 
 			//Modified to pass UUID
-			search_result = doPagingSearch(searcher, query, hitsPerPage, uuid);
+			search_result = doPagingSearch(searcher, query, hitsPerPage, uuid, hostName);
 		} else {
 			doStreamingSearch(searcher, query);
 		}
@@ -164,6 +166,5 @@ std::string run_query(std::string index_location, std::string line, int hpp, std
 	}
 
 	return search_result;
-
 }
 

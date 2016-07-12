@@ -12,7 +12,7 @@ using namespace Lucene;
 //int doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, int32_t hitsPerPage, bool raw, std::string uuid) {
 
 //Modified definition
-std::string doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, int32_t hitsPerPage, std::string uuid) {
+std::string doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, int32_t hitsPerPage, std::string uuid, std::string hostName) {
 	// Collect enough docs to show 5 pages
 	TopScoreDocCollectorPtr collector = TopScoreDocCollector::create(hitsPerPage, false);
 	searcher->search(query, collector);
@@ -35,8 +35,11 @@ std::string doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, i
 		DocumentPtr doc = searcher->doc(hits[i]->doc);
 		String path = doc->get(L"path");
 		if (!path.empty()) {
-			LOG(INFO) << uuid << " "<< StringUtils::toUTF8(path).c_str() << std::endl;
+			LOG(INFO) << uuid << " "<< StringUtils::toUTF8(path).c_str();
+			searchResults += hostName;
+			searchResults += ":";
 			searchResults += StringUtils::toUTF8(path).c_str();
+			searchResults += "\n";
 			//Not interested in title at the moment
 			//String title = doc->get(L"title");
 			//if (!title.empty()) {

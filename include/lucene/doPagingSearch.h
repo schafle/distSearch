@@ -20,4 +20,4 @@ using namespace Lucene;
 //int doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, int32_t hitsPerPage, bool raw, std::string uuid);
 
 //Modified definition
-std::string doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, int32_t hitsPerPage, std::string uuid);
+std::string doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, int32_t hitsPerPage, std::string uuid, std::string hostName);
