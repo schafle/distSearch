@@ -15,4 +15,9 @@ using namespace Lucene;
 /// When the query is executed for the first time, then only enough results are collected to fill 5 result
 /// pages. If the user wants to page beyond this limit, then the query is executed another time and all
 /// hits are collected.
-int doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, int32_t hitsPerPage, bool raw, bool interactive);
+
+//Original Definition
+//int doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, int32_t hitsPerPage, bool raw, std::string uuid);
+
+//Modified definition
+std::string doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, int32_t hitsPerPage, std::string uuid);

@@ -23,6 +23,7 @@
 
 #include "easylogging++.h"
 
+#include "query.h"
 #include "node.h"
 
 #define HUNDMB 640001

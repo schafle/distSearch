@@ -17,6 +17,7 @@
 
 #include "easylogging++.h"
 
+#include "query.h"
 #include "node.h"
 
 #define ELPP_THREAD_SAFE 
@@ -132,8 +133,13 @@ int main(int argc, char* argv[]){
 
 	/* If leaf send its name to parent and thats it*/
 	if(currentNode.am_i_leaf(startNode, numOfBranches)){
-		LOG(INFO) << "Sending it back to parent " << currentNode.get_parent(startNode, numOfBranches) << std::endl;
-		currentNode.send_message(currentNode.get_parent(startNode, numOfBranches), 3034, received_string);
+		//LOG(INFO) << "Sending it back to parent " << currentNode.get_parent(startNode, numOfBranches) << std::endl;
+		//currentNode.send_message(currentNode.get_parent(startNode, numOfBranches), 3034, received_string);
+		std::cout << "Searching "<< std::endl;
+		//make_query(index_location);
+		std::cout << run_query( index_location, received_string.substr(36), 2, received_string.substr(0,36)) << std::endl;
+		std::cout << "Done searching!!"<< std::endl;
+		exit(EXIT_FAILURE);
 	}
 	/* else if root send back to client */	
 	else if(posNum == startNode){
