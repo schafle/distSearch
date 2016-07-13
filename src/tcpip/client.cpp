@@ -32,6 +32,8 @@
 #define I 'I'
 #define B 'B'
 
+#define HUNDMB 640001
+
 INITIALIZE_EASYLOGGINGPP
 
 std::string send_query( std::string message, std::string rootnode, int portNum){
@@ -174,12 +176,20 @@ int main(int argc, char** argv)
 			TCPStream* stream = acceptor->accept();
 			if (stream != NULL) {
 				ssize_t len;
-				char line[256];
-				if ((len = stream->receive(line, sizeof(line))) > 0) {
-					line[len] = 0;
+				char* line = new char[HUNDMB];
+				std::string delimiter = "___";
+				size_t pos = 0;
+				std::string token;
+				if ((len = stream->receive(line, HUNDMB)) > 0) {
 					received = string(line);
-					LOG(INFO) << "Received results for query " << uuid;
-					LOG(INFO) << "Query " << uuid << " returned all the messages in "<< received << " seconds";
+					//std::cout << received << std::endl;	
+					//LOG(INFO) << "Query " << uuid << " processed in " << 
+					//LOG(INFO) << "Query " << uuid << received << " seconds";
+				}
+				while ((pos = received.find(delimiter)) != std::string::npos) {
+				token = received.substr(0, pos);
+				std::cout << token << std::endl;
+				received.erase(0, pos + delimiter.length());
 				}
 			}
 			delete stream;

@@ -28,7 +28,8 @@ std::string doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, i
 	
 	int32_t start = 0;
 	int32_t end = std::min(hits.size(), hitsPerPage);
-
+	searchResults += uuid;
+	searchResults += "___";
 	for (int32_t i = start; i < end; ++i) {
 		LOG(INFO) << uuid << " doc=" << hits[i]->doc << " score=" << hits[i]->score ;
 
@@ -39,7 +40,7 @@ std::string doPagingSearch(const SearcherPtr& searcher, const QueryPtr& query, i
 			searchResults += hostName;
 			searchResults += ":";
 			searchResults += StringUtils::toUTF8(path).c_str();
-			searchResults += "\n";
+			searchResults += "___"; //Seperator 
 			//Not interested in title at the moment
 			//String title = doc->get(L"title");
 			//if (!title.empty()) {

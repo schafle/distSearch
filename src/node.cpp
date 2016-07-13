@@ -20,7 +20,7 @@
 #include <netdb.h>
 #include <iostream> 
 #include <cstdlib>
-
+#include <future>
 #include "easylogging++.h"
 
 #include "query.h"
@@ -68,7 +68,6 @@ std::string Node::get_parent(int initialNodeIndex, int numOfBranches){
 	int adjustedIndex=(curNodeIndex-initialNodeIndex+IPs.size())%IPs.size();
 	std::string parentIP = IPs[(adjustedIndex-1)/numOfBranches];
 	return parentIP;
-
 }
 
 /* Here goes the logic for get children method */
@@ -103,69 +102,7 @@ bool Node::am_i_leaf(int starting_node, int num_of_branches){
 }
 
 
-ssize_t readmultiple(int fd, char *ptr, size_t n)
-{
-	size_t nleft;
-	ssize_t nread;
-
-	nleft = n;
-	while (nleft > 0) {
-		if ((nread = read(fd, ptr, nleft)) < 0) {
-			if (errno == EINTR)
-				/* Loop back and call read again. */
-				nread = 0;
-			else
-				/* Some other error; can't handle. */
-				return -1;
-		} else if (nread == 0)
-			/* EOF. */
-			break;
-
-		nleft -= nread;
-		ptr += nread;
-	}
-	return n - nleft;
-}
-
-void *task1 (int connFd)
-{
-	LOG(INFO) << "Thread created with ID " << pthread_self();
-	char test[HUNDMB];
-	bzero(test, HUNDMB);
-	bool loop = false;
-	bzero(test, HUNDMB);
-
-
-	size_t nleft;
-	ssize_t nread;
-	char *ptr = test;
-	nleft = HUNDMB;
-	while (nleft > 0) {
-		if ((nread = read(connFd, test, nleft)) < 0) {
-			if (errno == EINTR)
-				/* Loop back and call read again. */
-				nread = 0;
-			else
-				/* Some other error; can't handle. */
-				std::cout << "Some other error; can't handle" << std::endl; //return; // -1;
-		} else if (nread == 0)
-			/* EOF. */
-			break;
-
-		nleft -= nread;
-		ptr += nread;
-	}
-	//return n - nleft;
-	//read(connFd, test, 1048576);
-
-	string received (test);
-	LOG(INFO) << "Results for Query " << received.substr(0,36) << " is processed; size of the result is "<< received.size() << " Bytes";        
-
-	LOG(INFO) << "Terminating thread " << pthread_self() << " and closing the connection";
-	close(connFd);
-}
-
-void multiple(TCPStream* stream){
+std::string multiple(TCPStream* stream){
 	std::string received;
 	ssize_t len;
 	char* line = new char[HUNDMB];
@@ -176,9 +113,10 @@ void multiple(TCPStream* stream){
 		LOG(INFO) << "Terminating thread " << std::this_thread::get_id() << " and closing the connection";
 		delete stream;
 	}
+	return received;
 }
-void Node::listenForMultipleReplies(int portNum, int numOfChildren){
-	std::thread threadA[numOfChildren];
+std::string Node::listenForMultipleReplies(int portNum, int numOfChildren){
+	std::vector<std::future<std::string>> results;
 	TCPStream* stream = NULL;
 	TCPAcceptor* acceptor = new TCPAcceptor(portNum);
 	if (acceptor->start() == 0) {
@@ -187,16 +125,17 @@ void Node::listenForMultipleReplies(int portNum, int numOfChildren){
 			stream = acceptor->accept();
 			if (stream != NULL) {
 				LOG(INFO) << "Connection Successful";
-				threadA[i] = std::thread(multiple, stream);
+				//threadA[i] = std::thread(multiple, stream);
+				results.push_back(std::async( multiple, stream));
 			}
 		}
 	}
-
-	for(int i = 0; i < numOfChildren; i++)
-	{
-		threadA[i].join();
-		LOG(INFO) << "Joined "<< i+1 << "threads successfully!!"; 
+	std::string search_results = "";
+	for(auto &e : results) {
+		search_results += e.get();
+		LOG(INFO) << search_results ;
 	}
+	return search_results;
 }
 
 std::string Node::listenOnTheReceivePort(int portNum){

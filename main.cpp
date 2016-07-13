@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctime>
+#include <thread>
+#include <future>
 
 #include "easylogging++.h"
 
@@ -32,6 +34,11 @@ void send_messages(std::vector<std::string> children, int portNum, Node currentN
 		}
 		LOG(INFO) << "Sent the message to " <<  *it;
 	}
+}
+
+std::string asyncQuery( std::string index_location, std::string query, int max_pages, std::string uuid, std::string HostName)
+{ 
+    return run_query( index_location, query, max_pages, uuid, HostName);
 }
 
 int main(int argc, char* argv[]){
@@ -135,7 +142,7 @@ int main(int argc, char* argv[]){
 	/* If leaf send its name to parent and thats it*/
 	if(currentNode.am_i_leaf(startNode, numOfBranches)){
 		uuid = received_string.substr(0,36);
-		search_results = run_query( index_location, received_string.substr(36), 2, uuid, HostName) << std::endl;
+		search_results = run_query( index_location, received_string.substr(36), 10, uuid, HostName);  //10 is the default number of hits
 		LOG(INFO) << uuid << " Done searching!!";
 		LOG(INFO) << uuid << " Sending results back to parent " << currentNode.get_parent(startNode, numOfBranches) << std::endl;
 		currentNode.send_message(currentNode.get_parent(startNode, numOfBranches), 3034, search_results);
@@ -147,13 +154,23 @@ int main(int argc, char* argv[]){
 
 		// create a new thread to send all the messages
 		std::thread send (send_messages, children, 3033, currentNode, received_string);
-
-		LOG(INFO) << "Done sending query to all the children; waiting for children to send the message back";
-		
-		currentNode.listenForMultipleReplies(3034, numOfChildren);
 		send.join();
+		LOG(INFO) << "Done sending query to all the children; waiting for children to send the message back";
+		LOG(INFO) << "Starting async search in index";
+		uuid = received_string.substr(0,36);
+		
+		auto future = std::async( asyncQuery, index_location, received_string.substr(36), 10, uuid, HostName); //Starting async query
+		
+		std::string resultsFromChildren = currentNode.listenForMultipleReplies(3034, numOfChildren);
+	        
+		//LOG(INFO) << uuid << " Received results from children " << resultsFromChildren; 
+		std::string searchResults = future.get();	
+		
+		LOG(INFO) << uuid << " Sending results back to parent " << currentNode.get_parent(startNode, numOfBranches);
+		
 		duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
-		currentNode.send_message("localhost", 3035, std::to_string(duration));
+		//currentNode.send_message("localhost", 3035, std::to_string(duration));
+		currentNode.send_message("localhost", 3035, "Received all messages in " + std::to_string(duration) + " seconds" + "\n"  + searchResults + resultsFromChildren);
 		LOG(INFO) << "Received all messages in: "<< duration << " seconds" ;
 	}	
 	/* Else open a connection for collecting result from child and then send back to parent */
@@ -161,13 +178,20 @@ int main(int argc, char* argv[]){
 		// create a new thread to send all the messages
 		std::thread send (send_messages, children, 3033, currentNode, received_string);
 		send.join();
-
 		LOG(INFO) << "Done sending query to all the children; waiting for children to send the message back";
-		currentNode.listenForMultipleReplies(3034, numOfChildren);
+		LOG(INFO) << "Starting async search in index";
+		uuid = received_string.substr(0,36);
+		
+		auto future = std::async( asyncQuery, index_location, received_string.substr(36), 10, uuid, HostName); //Starting async query
+		       
+	        std::string resultsFromChildren = currentNode.listenForMultipleReplies(3034, numOfChildren);
+		std::string searchResults = future.get();	
+		
+		LOG(INFO) << uuid << " Sending results back to parent " << currentNode.get_parent(startNode, numOfBranches) << std::endl;
 
 		// For current implementation we are sending back the string we got from the parent
 		// When query collection is implemented we will send back the results for each query
-		currentNode.send_message(currentNode.get_parent(startNode, numOfBranches), 3034, received_string); 
+		currentNode.send_message(currentNode.get_parent(startNode, numOfBranches), 3034, searchResults + resultsFromChildren); 
 	}
 	/* Make query irrespective of anything on the current node */
 }

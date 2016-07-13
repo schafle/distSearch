@@ -54,7 +54,7 @@ set(PROJECT_BINARY_DIR "bin")
 add_executable("binServer" "main.cpp" "src/node.cpp" "src/error.cpp" "${TCPIP_SOURCE_DIR}/tcpconnector.cpp" "${TCPIP_SOURCE_DIR}/tcpacceptor.cpp" "${TCPIP_SOURCE_DIR}/tcpstream.cpp" "src/doPagingSearch.cpp" "src/query.cpp")
 
 TARGET_LINK_LIBRARIES( "binServer"
-	boost_system lucene++
+	pthread boost_system lucene++
 )
 
 
