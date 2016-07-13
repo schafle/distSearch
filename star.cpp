@@ -15,11 +15,14 @@
 #include <string.h>
 #include <cstdlib>
 #include <ctime>
+#include <thread>
+#include <future>
 
 #include "easylogging++.h"
 
 //#include "query.h"
 #include "node.h"
+#include "query.h"
 
 #define ELPP_THREAD_SAFE 
  
@@ -41,15 +44,9 @@ void send_messages(std::vector<std::string> children, int portNum, Node currentN
 }
 
 
-void receive_messages(std::vector<std::string> children, int portNum, Node currentNode){
-
-	for(std::vector<std::string>::iterator it = children.begin(); it != children.end(); ++it) {
-
-		if(!currentNode.get_message(*it, 3034) ){ 
-			LOG(ERROR) << "ERROR while receiving reply from children";
-		}
-		LOG(INFO) << "Received reply from " <<  *it ;
-	}
+std::string asyncQuery( std::string index_location, std::string query, int max_pages, std::string uuid, std::string HostName)
+{ 
+    return run_query( index_location, query, max_pages, uuid, HostName);
 }
 
 int main(int argc, char* argv[]){
@@ -132,33 +129,40 @@ int main(int argc, char* argv[]){
 	pthread_t threadA[2];
 	std::clock_t start;
 	double duration;
+	std::string uuid;
 	if(posNum==0){
+		
 		start = std::clock();
-		/* Iterate ovr all the children and Forward query */
-		// create a new thread to start listening for new messages
-		// std::thread receive(receive_messages, children, 3034, currentNode);
 
 		// create a new thread to send all the messages
 		std::thread send (send_messages, children, 3033, currentNode, received_string);
-
-		LOG(INFO) << "Done sending query to all the children; waiting for children to send the message back";
-		//This for loop represents that the root node is making connection serially to each node in cluster and 
-		//getting data from them. This can be done in two ways. 1. The serial way --> The for looop
-		//2. Parallel way --> create a thread to get data from each new connection, like subparents in tree
-		//For now we are going ahead with 1 since creating multiple threads will/can cause problems if not handled properly.
-		//Also need to find out how is it being done in the systems implementing star topology 
-		currentNode.listenForMultipleReplies(3034, children.size()); /* The parallel way */
 		send.join();
-		duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
-		currentNode.send_message("localhost", 3035, std::to_string(duration));
-		LOG(INFO) <<"Received all messages in: "<< duration << " seconds";
+		LOG(INFO) << "Done sending query to all the children; waiting for children to send the message back";
+		LOG(INFO) << "Starting async search in index";
+		uuid = received_string.substr(0,36);
+		
+		auto future = std::async( asyncQuery, index_location, received_string.substr(36), 10, uuid, HostName); //Starting async query
+		
+		std::string resultsFromChildren = currentNode.listenForMultipleReplies(3034, children.size());
+
+		 //LOG(INFO) << uuid << " Received results from children " << resultsFromChildren; 
+		 std::string searchResults = future.get();	
+
+		 LOG(INFO) << uuid << " Sending results back to parent " << parent;
+
+		 duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+		 //currentNode.send_message("localhost", 3035, std::to_string(duration));
+		 currentNode.send_message("localhost", 3035, "Received all messages in " + std::to_string(duration) + " seconds" + "\n"  + searchResults + resultsFromChildren);
+		 LOG(INFO) << "Received all messages in: "<< duration << " seconds" ;
 	}
+
 	/* Else open a connection and send message back to parent */
 	else{
-		LOG(INFO) << "Sending it back to parent "<< parent ;
-		// Todo: For now we are just sending back the string we got from the parent
-		// In future we will send query results in place of received_string
-		currentNode.send_message(parent, 3034, received_string);
+		uuid = received_string.substr(0,36);
+		std::string search_results = run_query( index_location, received_string.substr(36), 10, uuid, HostName);  //10 is the default number of hits
+		LOG(INFO) << uuid << " Done searching!!";
+		LOG(INFO) << uuid << " Sending results back to parent " << parent;
+		currentNode.send_message( parent, 3034, search_results);
 	}
 
 }

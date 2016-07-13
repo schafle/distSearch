@@ -58,11 +58,12 @@ TARGET_LINK_LIBRARIES( "binServer"
 )
 
 
-add_executable("binStarServer" "star.cpp" "src/node.cpp" "src/error.cpp" "${TCPIP_SOURCE_DIR}/tcpconnector.cpp" "${TCPIP_SOURCE_DIR}/tcpacceptor.cpp" "${TCPIP_SOURCE_DIR}/tcpstream.cpp")
+add_executable("binStarServer" "star.cpp" "src/node.cpp" "src/error.cpp" "${TCPIP_SOURCE_DIR}/tcpconnector.cpp" "${TCPIP_SOURCE_DIR}/tcpacceptor.cpp" "${TCPIP_SOURCE_DIR}/tcpstream.cpp" "src/doPagingSearch.cpp" "src/query.cpp")
+
 
 #ServerForStar
 TARGET_LINK_LIBRARIES( "binStarServer"
-pthread
+	pthread boost_system lucene++
 )
 
 include_directories(
