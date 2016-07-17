@@ -7,7 +7,7 @@ let index=1
 while read p; do
   ssh -o StrictHostKeyChecking=no -n -i ~/Michigan.pem -T ubuntu@$p 'killall -9 binServer'
   ssh -o StrictHostKeyChecking=no -n -i ~/Michigan.pem -T ubuntu@$p 'killall -9 binStarServer'
-  scp -o StrictHostKeyChecking=no -i ~/Michigan.pem ../bin/binServer ../bin/binStarServer ../bin/binClient run.sh star.sh filename.txt ubuntu@$p:/home/ubuntu
+  scp -o StrictHostKeyChecking=no -i ~/Michigan.pem ../bin/binServer ../bin/binStarServer ../bin/binClient run.sh star.sh extract.sh filename.txt ubuntu@$p:/home/ubuntu
   echo "ssh -o StrictHostKeyChecking=no -n -i ~/Michigan.pem -T ubuntu@$p 'screen -d -m ./run.sh $index &'" >> start_tree.sh
   echo "ssh -o StrictHostKeyChecking=no -n -i ~/Michigan.pem -T ubuntu@$p 'screen -d -m ./star.sh $index &'" >> start_star.sh
 let "index++"
