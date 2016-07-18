@@ -1,7 +1,16 @@
 cmake_minimum_required (VERSION 2.6)
 project (DistrSearch)
-
+#option(RELEASE "Building in Debug mode" OFF)
+#if (NOT RELEASE)
+#	MESSAGE( STATUS "Building in debug mode")
 set(CMAKE_BUILD_TYPE Debug)
+#	add_definitions(-DELPP_THREAD_SAFE) 
+#	add_definitions(-DINITIALIZE_EASYLOGGINGPP)
+#else()
+#	MESSAGE( STATUS "Building in release mode")
+#	set(CMAKE_BUILD_TYPE Release)
+#	add_definitions(-DELPP_DISABLE_LOGS)
+#endif()
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") # for gcc >= 4.7, or c++0x for 4.6
 
