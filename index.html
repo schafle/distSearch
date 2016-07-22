@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Distsearch by wtpoo</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Distsearch</h1>
+        <p></p>
+
+        <p class="view"><a href="https://github.com/wtpoo/distSearch">View the Project on GitHub <small>wtpoo/distSearch</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/wtpoo/distSearch/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/wtpoo/distSearch/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/wtpoo/distSearch">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="optimizing-search-in-un-sharded-large-scale-distributed-systems" class="anchor" href="#optimizing-search-in-un-sharded-large-scale-distributed-systems" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Optimizing Search in Un-Sharded Large-Scale Distributed Systems</h1>
+
+<p>Distributed file systems and storage networks are increasingly common due to the need to store large volumes of unstructured data. While these systems support large-scale storage, they create challenges relating to efficiently discovering, accessing, managing, and analyzing distributed data. At the core of these challenges is the need to support scalable discovery of unstructured data. Traditional search methods leverage centralized and globally sharded indexes—a single index distributed based on contents. We present a distributed search framework that does not rely on sharding and can be applied to a range of distributed storage models. Our approach is built on top of Lucene and utilizes search trees to distribute queries and parallelize the search. To further optimize query performance we explore methods to prioritize indexes based on size. Our search framework is evaluated against alternatives like Grep and Solr. We also compare our hierarchical index structure with a traditional centralized index.</p>
+
+<h2>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h2>
+
+<p>An estimated 70% of the world’s data remains unstructured, with the value growing about 60% each year [4] . The move towards big data and computationally intensive data analytics algorithms has motivated the development of systems capable of handling huge workloads and storing large  amounts of data. Typically, such systems are distributed,  rather than centralized, as it avoids the exponential increase of  cost associated with single servers. These may take the form  of computers connected over the web or racks of servers in a supercomputer. While these systems improve performance they create new challenges with respect to common data management and analysis operations, such as data discovery.</p>
+
+<p>Most traditional operating systems support search via implementation of query primitives (e.g., find or grep) or using a desktop search. Query primitives are limited to single computers. Distributed implementations, such as Hadoop Grep can be used on specific systems; however, they often require specialized software and are non-trivial to use. Many desktop search engines use pattern matching rather than indexing to perform a more detailed search. However, in a large distributed environment such an operation is infeasible due to the expense and overhead required to perform queries over a large number of nodes.</p>
+
+<p>Distributed systems and specifically distributed file systems have been around for over two decades. While there are software solutions for searching within distributed systems, to the best of our knowledge there is no framework for searching in an unsharded environment. Examples of such environments include the Fusion File System and Globus Data-Management System. Here we present a general framework that can be applied to different distributed search scenarios.</p>
+
+<h2>
+<a id="architecture-and-implementation" class="anchor" href="#architecture-and-implementation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Architecture And Implementation</h2>
+
+<p>We build our approach on Apache Lucene, the de facto standard large-scale indexing and query-processing engine. Lucene is a Java library on which many popular search engines like Solr and ElasticSearch are implemented. Our solution leverages a C++ version of Lucene to index documents, search indexes, perform queries, and score results. We use a custom TCP/IP protocol for sending messages between nodes. Due to the unsharded nature of the environment, each node is responsible for maintaining an index of only the documents located on that node.</p>
+
+<h3>
+<a id="lucene" class="anchor" href="#lucene" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Lucene</h3>
+
+<p>Lucene stores data in the form of documents where each document contains a number of fields. Fields are populated by tokenization of the text values of the document. To support partial and free-text search, it is the values stored in fields that are matched against queries. Lucene looks for matches in fields then combines the results to return documents. The number of relevant fields within a single document influences the scoring of the document so more relevant documents are given higher scores. Lucene provides near-real-time indexing-to-search capabilities.</p>
+
+<h3>
+<a id="server-client-model" class="anchor" href="#server-client-model" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Server-Client Model</h3>
+
+<p>The search engine consists of a client interface and a server existing on each node. When a phrase is querried on the client of a specific node, that client communicates to the server on that node, which begins searching the current node. The server then takes care of propogating the query to other nodes. After each node’s server has searched themselves, the results are ultimately argregated on the server of the node that the search began on and sent back to the client.</p>
+
+<h3>
+<a id="query-distribution" class="anchor" href="#query-distribution" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Query Distribution</h3>
+
+<p>After a server recieves a query, a distribution tree is constructed using an ordered membership list of all other nodes in the cluster and the queries are distributed accordingly. The membership list allows for easy changes in cluster membership; it simply must be updated when a node joins or leaves the cluster. For result collection, each non-leaf node waits for and collects the results from each of its children, and sends those results, along with its own, to its parent. Utilizing a spanning tree to distribute queries and collect results allow queries to be pushed out faster than a broadcast and traffic at the client node to be reduced. We futher optimized this operation by sending to nodes with larger indexes first, which are more likely to require a longer searchtime.</p>
+
+<h2>
+<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authors and Contributors</h2>
+
+<p><a href="https://github.com/wtpoo" class="user-mention">@wtpoo</a> and Jonathan Wu</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/wtpoo">wtpoo</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
