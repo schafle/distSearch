@@ -3,10 +3,10 @@ Distributed file systems and storage networks are increasingly common due to the
 
 ## Setting up a node
 - install git 
-	sudo apt-get install git --assume-yes
+	`sudo apt-get install git --assume-yes`
 - clone the repository
-	git clone https://github.com/wtpoo/distSearch.git
+	`git clone https://github.com/wtpoo/distSearch.git`
 - Locate scripts directory and run setup.sh; It will install other necessary dependencies and guide you through process of instantiating a node
 
-##Documentation
+## Documentation
 Find the documentation for this project [here](http://wtpoo.github.io/distSearch/ "documentation").
